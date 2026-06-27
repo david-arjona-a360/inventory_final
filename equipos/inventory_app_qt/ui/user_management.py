@@ -24,7 +24,9 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 from services.auth_service import (
-    load_users, save_users, hash_password, can_manage,
+    load_users, save_users, hash_password,
+    users_to_list, users_from_list,
+    can_manage,
 )
 
 
@@ -133,7 +135,7 @@ class UserManagementView(QWidget):
 
     def refresh(self):
         try:
-            self._users = load_users()
+            self._users = users_to_list(load_users())
             self._populate_table()
             self._status_label.setText(f"{len(self._users)} user(s)")
         except Exception as e:
@@ -161,16 +163,21 @@ class UserManagementView(QWidget):
         dialog = _UserFormDialog("Add User")
         if dialog.exec_():
             data = dialog.get_data()
-            new_id = max((u.get("id", 0) for u in self._users), default=0) + 1
             new_user = {
-                "id": new_id,
                 "username": data["username"].strip(),
                 "password": hash_password(data["password"]),
                 "role": data["role"],
+                "type": "local",
                 "status": "active",
             }
-            self._users.append(new_user)
-            save_users(self._users)
+            prev = load_users()
+            prev[new_user["username"]] = {
+                "password": new_user["password"],
+                "role": new_user["role"],
+                "type": new_user["type"],
+                "status": new_user["status"],
+            }
+            save_users(prev)
             self.refresh()
             self._status_label.setText(f"User '{new_user['username']}' added.")
 
@@ -181,8 +188,11 @@ class UserManagementView(QWidget):
         dialog = _PasswordDialog(f"Change Password for '{user['username']}'")
         if dialog.exec_():
             new_pwd = dialog.get_password()
-            user["password"] = hash_password(new_pwd)
-            save_users(self._users)
+            prev = load_users()
+            if user["username"] in prev:
+                prev[user["username"]]["password"] = hash_password(new_pwd)
+                save_users(prev)
+            self.refresh()
             self._status_label.setText(f"Password updated for '{user['username']}'.")
 
     def _change_role(self):
@@ -192,8 +202,10 @@ class UserManagementView(QWidget):
         dialog = _RoleDialog(f"Change Role for '{user['username']}'", user["role"])
         if dialog.exec_():
             new_role = dialog.get_role()
-            user["role"] = new_role
-            save_users(self._users)
+            prev = load_users()
+            if user["username"] in prev:
+                prev[user["username"]]["role"] = new_role
+                save_users(prev)
             self.refresh()
             self._status_label.setText(f"Role changed to '{new_role}' for '{user['username']}'.")
 
@@ -210,8 +222,9 @@ class UserManagementView(QWidget):
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply == QMessageBox.Yes:
-            self._users = [u for u in self._users if u["id"] != user["id"]]
-            save_users(self._users)
+            prev = load_users()
+            prev.pop(user["username"], None)
+            save_users(prev)
             self.refresh()
             self._status_label.setText(f"User '{user['username']}' removed.")
 
