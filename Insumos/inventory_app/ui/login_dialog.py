@@ -14,10 +14,10 @@ from theme import (
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
-    QPushButton, QMessageBox, QApplication
+    QPushButton, QMessageBox, QApplication, QFrame, QGraphicsDropShadowEffect,
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QFont, QIcon, QPixmap
+from PyQt5.QtGui import QFont, QIcon, QPixmap, QColor
 
 
 class LoginDialog(QDialog):
@@ -30,90 +30,93 @@ class LoginDialog(QDialog):
 
     def _init_ui(self):
         self.setWindowTitle("Inicio de Sesión - Inventario de Insumos")
-        self.setFixedSize(420, 300)
+        self.setFixedSize(440, 420)
         self.setModal(True)
 
-        layout = QVBoxLayout()
-        layout.setSpacing(12)
+        outer_layout = QVBoxLayout()
+        outer_layout.setContentsMargins(24, 24, 24, 24)
 
-        # Logo
+        card = QFrame()
+        card.setObjectName("loginCard")
+        card.setStyleSheet(f"""
+            #loginCard {{
+                background-color: {WHITE};
+                border: 1px solid {BORDER};
+                border-radius: 12px;
+            }}
+        """)
+        card_layout = QVBoxLayout(card)
+        card_layout.setSpacing(14)
+        card_layout.setContentsMargins(32, 28, 32, 28)
+
+        shadow = QGraphicsDropShadowEffect()
+        shadow.setBlurRadius(24)
+        shadow.setXOffset(0)
+        shadow.setYOffset(4)
+        shadow.setColor(QColor(0, 0, 0, 40))
+        card.setGraphicsEffect(shadow)
+
         try:
             pixmap = QPixmap(LOGO_PATH)
-            scaled = pixmap.scaledToWidth(120, Qt.SmoothTransformation)
+            scaled = pixmap.scaledToWidth(80, Qt.SmoothTransformation)
             logo_label = QLabel()
             logo_label.setPixmap(scaled)
             logo_label.setAlignment(Qt.AlignCenter)
-            layout.addWidget(logo_label)
+            card_layout.addWidget(logo_label)
         except Exception:
             pass
 
         title = QLabel("Inventario de Insumos")
         title.setAlignment(Qt.AlignCenter)
-        title.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        layout.addWidget(title)
+        title.setFont(QFont("Segoe UI", 18, QFont.Bold))
+        title.setStyleSheet(f"color: {TEXT_DARK}; background: transparent;")
+        card_layout.addWidget(title)
 
         subtitle = QLabel("Ingrese sus credenciales")
         subtitle.setAlignment(Qt.AlignCenter)
         subtitle.setFont(QFont("Segoe UI", 10))
-        subtitle.setStyleSheet(f"color: {TEXT_MUTED};")
-        layout.addWidget(subtitle)
+        subtitle.setStyleSheet(f"color: {TEXT_MUTED}; background: transparent;")
+        card_layout.addWidget(subtitle)
 
-        layout.addSpacing(8)
-
-        form_layout = QVBoxLayout()
-        form_layout.setSpacing(8)
+        card_layout.addSpacing(6)
 
         self._username_input = QLineEdit()
         self._username_input.setPlaceholderText("Usuario")
-        self._username_input.setMinimumHeight(35)
+        self._username_input.setMinimumHeight(38)
         self._username_input.setFont(QFont("Segoe UI", 11))
         self._username_input.textChanged.connect(self._on_username_changed)
-        form_layout.addWidget(self._username_input)
+        card_layout.addWidget(self._username_input)
 
         self._password_input = QLineEdit()
         self._password_input.setPlaceholderText("Contraseña")
         self._password_input.setEchoMode(QLineEdit.Password)
-        self._password_input.setMinimumHeight(35)
+        self._password_input.setMinimumHeight(38)
         self._password_input.setFont(QFont("Segoe UI", 11))
         self._password_input.returnPressed.connect(self._do_login)
-        form_layout.addWidget(self._password_input)
+        card_layout.addWidget(self._password_input)
 
         self._password_label = QLabel("")
-        self._password_label.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 9pt;")
-        form_layout.addWidget(self._password_label)
+        self._password_label.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 9pt; background: transparent;")
+        card_layout.addWidget(self._password_label)
 
-        layout.addLayout(form_layout)
+        card_layout.addSpacing(6)
 
-        layout.addSpacing(10)
-
-        btn_layout = QHBoxLayout()
         self._login_btn = QPushButton("Ingresar")
-        self._login_btn.setMinimumHeight(36)
-        self._login_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        self._login_btn.setObjectName("primaryBtn")
+        self._login_btn.setMinimumHeight(40)
+        self._login_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
         self._login_btn.clicked.connect(self._do_login)
-        self._login_btn.setStyleSheet(f"""
-            QPushButton {{
-                background-color: {PRIMARY};
-                color: {WHITE};
-                border: none;
-                border-radius: 4px;
-                padding: 8px 16px;
-            }}
-            QPushButton:hover {{
-                background-color: {HOVER};
-            }}
-        """)
-        btn_layout.addWidget(self._login_btn)
+        card_layout.addWidget(self._login_btn)
 
         cancel_btn = QPushButton("Cancelar")
-        cancel_btn.setMinimumHeight(36)
-        cancel_btn.setFont(QFont("Segoe UI", 10))
-        cancel_btn.setStyleSheet(f"color: {TEXT_MUTED};")
+        cancel_btn.setObjectName("cancelBtn")
+        cancel_btn.setMinimumHeight(40)
+        cancel_btn.setFont(QFont("Segoe UI", 11))
         cancel_btn.clicked.connect(self.reject)
-        btn_layout.addWidget(cancel_btn)
+        card_layout.addWidget(cancel_btn)
 
-        layout.addLayout(btn_layout)
-        self.setLayout(layout)
+        outer_layout.addWidget(card)
+        self.setLayout(outer_layout)
 
     def _on_username_changed(self, text):
         user_info = self._user_service.find_by_username(text.strip())

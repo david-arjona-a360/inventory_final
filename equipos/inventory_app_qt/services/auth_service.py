@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 import hashlib
 import shutil
@@ -6,22 +7,19 @@ import logging
 
 log = logging.getLogger("auth_service")
 
-from config import find_shared_dir, USERS_JSON_PATH
+from config.settings import USERS_FILE, USERS_JSON_PATH
 
 _theme_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "Theme"))
-if _theme_dir not in os.sys.path:
-    os.sys.path.insert(0, _theme_dir)
+if _theme_dir not in sys.path:
+    sys.path.insert(0, _theme_dir)
 
-shared_dir = find_shared_dir()
-if shared_dir:
-    USERS_FILE = os.path.join(shared_dir, "users.json")
+_shared_dir = os.path.dirname(USERS_FILE)
+if _shared_dir and os.path.isdir(_shared_dir):
     if not os.path.exists(USERS_FILE):
         try:
             shutil.copy2(USERS_JSON_PATH, USERS_FILE)
         except Exception:
             pass
-else:
-    USERS_FILE = USERS_JSON_PATH
 
 LOCAL_ADMIN_USERNAME = "localadmin"
 LOCAL_ADMIN_DEFAULT_PW = "Admin@1234"

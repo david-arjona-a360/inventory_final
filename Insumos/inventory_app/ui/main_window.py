@@ -11,6 +11,7 @@ from theme import (
     PRIMARY, SECONDARY, ACCENT, LIGHT_BG, WHITE, DARK_RED,
     TEXT_DARK, TEXT_MUTED, BORDER, HOVER, ROLE_COLORS, LOGO_PATH,
 )
+from icons import icon_inventory, icon_report, icon_users, icon_logout
 
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
@@ -25,133 +26,6 @@ from ui.user_management import UserManagementView
 from ui.report_builder import ReportBuilderView
 from services.excel_service import ExcelService
 from services.report_service import ReportService
-
-
-GLOBAL_STYLESHEET = f"""
-QMainWindow {{
-    background-color: {WHITE};
-}}
-QWidget {{
-    font-family: "Segoe UI", "Arial", sans-serif;
-    color: {TEXT_DARK};
-}}
-QLabel {{
-    color: {TEXT_DARK};
-}}
-QLineEdit {{
-    border: 1px solid {BORDER};
-    border-radius: 4px;
-    padding: 4px 8px;
-    background-color: {WHITE};
-    color: {TEXT_DARK};
-}}
-QLineEdit:focus {{
-    border-color: {PRIMARY};
-}}
-QComboBox {{
-    border: 1px solid {BORDER};
-    border-radius: 4px;
-    padding: 4px 8px;
-    background-color: {WHITE};
-    color: {TEXT_DARK};
-}}
-QComboBox:focus {{
-    border-color: {PRIMARY};
-}}
-QComboBox::drop-down {{
-    border: none;
-}}
-QSpinBox {{
-    border: 1px solid {BORDER};
-    border-radius: 4px;
-    padding: 4px 8px;
-    background-color: {WHITE};
-    color: {TEXT_DARK};
-}}
-QSpinBox:focus {{
-    border-color: {PRIMARY};
-}}
-QPushButton {{
-    background-color: {WHITE};
-    color: {TEXT_DARK};
-    border: 1px solid {BORDER};
-    border-radius: 4px;
-    padding: 6px 16px;
-    font-size: 13px;
-}}
-QPushButton:hover {{
-    background-color: {LIGHT_BG};
-    border-color: {SECONDARY};
-}}
-QPushButton:pressed {{
-    background-color: {BORDER};
-}}
-QTableWidget {{
-    border: 1px solid {BORDER};
-    gridline-color: {BORDER};
-    background-color: {WHITE};
-    alternate-background-color: {LIGHT_BG};
-    selection-background-color: {PRIMARY};
-    selection-color: {WHITE};
-}}
-QTableWidget::item {{
-    padding: 4px 8px;
-}}
-QHeaderView::section {{
-    background-color: {LIGHT_BG};
-    color: {TEXT_DARK};
-    font-weight: bold;
-    border: none;
-    border-bottom: 2px solid {PRIMARY};
-    padding: 6px 8px;
-}}
-QGroupBox {{
-    font-weight: bold;
-    border: 1px solid {BORDER};
-    border-radius: 6px;
-    margin-top: 12px;
-    padding-top: 16px;
-}}
-QGroupBox::title {{
-    subcontrol-origin: margin;
-    left: 12px;
-    padding: 0 6px;
-    color: {TEXT_DARK};
-}}
-QCheckBox {{
-    spacing: 6px;
-}}
-QCheckBox::indicator {{
-    width: 16px;
-    height: 16px;
-}}
-QScrollBar:vertical {{
-    background: {LIGHT_BG};
-    width: 10px;
-    border: none;
-}}
-QScrollBar::handle:vertical {{
-    background: {BORDER};
-    border-radius: 5px;
-    min-height: 20px;
-}}
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-    height: 0px;
-}}
-QScrollBar:horizontal {{
-    background: {LIGHT_BG};
-    height: 10px;
-    border: none;
-}}
-QScrollBar::handle:horizontal {{
-    background: {BORDER};
-    border-radius: 5px;
-    min-width: 20px;
-}}
-QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
-    width: 0px;
-}}
-"""
 
 
 class MainWindow(QMainWindow):
@@ -260,24 +134,28 @@ class MainWindow(QMainWindow):
 
         nav_layout.addStretch()
 
-        self._btn_inventory = QPushButton("Inventario")
+        self._btn_inventory = QPushButton(icon_inventory(TEXT_DARK), "Inventario")
         self._btn_inventory.setObjectName("navBtn")
+        self._btn_inventory.setIconSize(self._btn_inventory.iconSize() * 1.2)
         self._btn_inventory.clicked.connect(lambda: self._switch_view(0))
         nav_layout.addWidget(self._btn_inventory)
 
-        self._btn_reports = QPushButton("Reportes")
+        self._btn_reports = QPushButton(icon_report(TEXT_DARK), "Reportes")
         self._btn_reports.setObjectName("navBtn")
+        self._btn_reports.setIconSize(self._btn_reports.iconSize() * 1.2)
         self._btn_reports.clicked.connect(lambda: self._switch_view(1))
         nav_layout.addWidget(self._btn_reports)
 
         if self._user_service.is_admin():
-            self._btn_users = QPushButton("Usuarios")
+            self._btn_users = QPushButton(icon_users(TEXT_DARK), "Usuarios")
             self._btn_users.setObjectName("navBtn")
+            self._btn_users.setIconSize(self._btn_users.iconSize() * 1.2)
             self._btn_users.clicked.connect(lambda: self._switch_view(2))
             nav_layout.addWidget(self._btn_users)
 
-        logout_btn = QPushButton("Salir")
+        logout_btn = QPushButton(icon_logout(WHITE, 18), "Salir")
         logout_btn.setObjectName("logoutBtn")
+        logout_btn.setIconSize(logout_btn.iconSize() * 1.2)
         logout_btn.clicked.connect(self._logout)
         nav_layout.addWidget(logout_btn)
 
@@ -285,35 +163,9 @@ class MainWindow(QMainWindow):
 
     def _apply_styles(self):
         self.setStyleSheet(f"""
-            {GLOBAL_STYLESHEET}
             #navBar {{
                 background-color: {WHITE};
                 border-bottom: 2px solid {PRIMARY};
-            }}
-            #navBtn {{
-                background-color: transparent;
-                color: {TEXT_DARK};
-                border: none;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-size: 13px;
-                font-weight: bold;
-            }}
-            #navBtn:hover {{
-                background-color: {LIGHT_BG};
-                color: {PRIMARY};
-            }}
-            #logoutBtn {{
-                background-color: {PRIMARY};
-                color: {WHITE};
-                border: none;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-size: 13px;
-                font-weight: bold;
-            }}
-            #logoutBtn:hover {{
-                background-color: {DARK_RED};
             }}
         """)
 

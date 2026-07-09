@@ -41,6 +41,7 @@ from theme import (
     PRIMARY, SECONDARY, ACCENT, LIGHT_BG, WHITE, DARK_RED,
     TEXT_DARK, TEXT_MUTED, BORDER, HOVER,
 )
+from qss import build_stylesheet
 
 from PyQt5.QtWidgets import QApplication, QMessageBox
 from PyQt5.QtCore import Qt
@@ -52,142 +53,12 @@ from ui.login_dialog import LoginDialog
 from ui.main_window import MainWindow
 
 
-APP_STYLESHEET = f"""
-QWidget {{
-    font-family: "Segoe UI", "Arial", sans-serif;
-    color: {TEXT_DARK};
-}}
-QMainWindow {{
-    background-color: {WHITE};
-}}
-QDialog {{
-    background-color: {WHITE};
-}}
-QLabel {{
-    color: {TEXT_DARK};
-}}
-QLineEdit {{
-    border: 1px solid {BORDER};
-    border-radius: 4px;
-    padding: 4px 8px;
-    background-color: {WHITE};
-    color: {TEXT_DARK};
-}}
-QLineEdit:focus {{
-    border-color: {PRIMARY};
-}}
-QComboBox {{
-    border: 1px solid {BORDER};
-    border-radius: 4px;
-    padding: 4px 8px;
-    background-color: {WHITE};
-    color: {TEXT_DARK};
-}}
-QComboBox:focus {{
-    border-color: {PRIMARY};
-}}
-QComboBox::drop-down {{
-    border: none;
-}}
-QSpinBox {{
-    border: 1px solid {BORDER};
-    border-radius: 4px;
-    padding: 4px 8px;
-    background-color: {WHITE};
-    color: {TEXT_DARK};
-}}
-QSpinBox:focus {{
-    border-color: {PRIMARY};
-}}
-QPushButton {{
-    background-color: {WHITE};
-    color: {TEXT_DARK};
-    border: 1px solid {BORDER};
-    border-radius: 4px;
-    padding: 6px 16px;
-    font-size: 13px;
-}}
-QPushButton:hover {{
-    background-color: {LIGHT_BG};
-    border-color: {SECONDARY};
-}}
-QPushButton:pressed {{
-    background-color: {BORDER};
-}}
-QTableWidget {{
-    border: 1px solid {BORDER};
-    gridline-color: {BORDER};
-    background-color: {WHITE};
-    alternate-background-color: {LIGHT_BG};
-    selection-background-color: {PRIMARY};
-    selection-color: {WHITE};
-}}
-QTableWidget::item {{
-    padding: 4px 8px;
-}}
-QHeaderView::section {{
-    background-color: {LIGHT_BG};
-    color: {TEXT_DARK};
-    font-weight: bold;
-    border: none;
-    border-bottom: 2px solid {PRIMARY};
-    padding: 6px 8px;
-}}
-QGroupBox {{
-    font-weight: bold;
-    border: 1px solid {BORDER};
-    border-radius: 6px;
-    margin-top: 12px;
-    padding-top: 16px;
-}}
-QGroupBox::title {{
-    subcontrol-origin: margin;
-    left: 12px;
-    padding: 0 6px;
-    color: {TEXT_DARK};
-}}
-QCheckBox {{
-    spacing: 6px;
-    color: {TEXT_DARK};
-}}
-QCheckBox::indicator {{
-    width: 16px;
-    height: 16px;
-}}
-QScrollBar:vertical {{
-    background: {LIGHT_BG};
-    width: 10px;
-    border: none;
-}}
-QScrollBar::handle:vertical {{
-    background: {BORDER};
-    border-radius: 5px;
-    min-height: 20px;
-}}
-QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
-    height: 0px;
-}}
-QScrollBar:horizontal {{
-    background: {LIGHT_BG};
-    height: 10px;
-    border: none;
-}}
-QScrollBar::handle:horizontal {{
-    background: {BORDER};
-    border-radius: 5px;
-    min-width: 20px;
-}}
-QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {{
-    width: 0px;
-}}
-QStatusBar {{
-    background-color: {LIGHT_BG};
-    color: {TEXT_MUTED};
-    border-top: 1px solid {BORDER};
-    font-size: 12px;
-    padding: 2px 10px;
-}}
-"""
+APP_STYLESHEET = build_stylesheet({
+    "PRIMARY": PRIMARY, "SECONDARY": SECONDARY, "ACCENT": ACCENT,
+    "LIGHT_BG": LIGHT_BG, "WHITE": WHITE, "DARK_RED": DARK_RED,
+    "TEXT_DARK": TEXT_DARK, "TEXT_MUTED": TEXT_MUTED, "BORDER": BORDER,
+    "HOVER": HOVER,
+})
 
 
 def main():

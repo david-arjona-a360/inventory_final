@@ -1,5 +1,8 @@
 import os
 import sys
+import logging
+
+log = logging.getLogger("config")
 
 _parent = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _parent not in sys.path:
@@ -54,7 +57,8 @@ def load_extra_columns(file_path: str) -> None:
 
         COLUMNS.clear()
         COLUMNS.extend(BASE_COLUMNS + extra)
-    except Exception:
+    except Exception as e:
+        log.error("load_extra_columns failed: %s", e)
         COLUMNS.clear()
         COLUMNS.extend(BASE_COLUMNS)
 

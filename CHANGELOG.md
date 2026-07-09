@@ -2,8 +2,53 @@
 
 # Inventory Manager — Inventory Manager
 
-> **Current version: v1.2.0 — Equipos PyQt5 Migration**
-> Verified: Equipos module migrated from Tkinter to PyQt5. Button styles standardized across both modules. All new files pass syntax validation.
+> **Current version: v1.3.0 — Bug Fix, Refactor & Modern UI**
+> Verified: Both apps start without import errors. All 3 phases complete.
+
+## 2026-07-09 — Phase 3: Aesthetic Modernization
+
+### Added
+- **`Theme/qss.py`** — Shared `build_stylesheet()` producing a refined Fusion-style QSS with:
+  - 6px border-radius, hover/focus states, smooth transitions
+  - Custom scrollbars, QHeaderView sorting indicator, table cell padding
+  - Object-name selectors for `#primaryBtn`, `#cancelBtn`, `#dangerBtn`, `#navBtn`, `#tableCard`, `#loginCard`
+- **`Theme/icons.py`** — SVG icon generators returning `QIcon` objects:
+  `icon_add`, `icon_edit`, `icon_delete`, `icon_refresh`, `icon_logout`, `icon_users`, `icon_search`, `icon_report`, `icon_inventory`
+  - All icons accept color and size overrides, use centered 24×24 viewBox
+
+### Changed
+- **Both `login_dialog.py` files** — Redesigned as card-style login with:
+  - `QGraphicsDropShadowEffect`, 12px `border-radius`, card `#loginCard` QSS class
+  - Centered layout with `setFixedSize()` for polished appearance
+- **Both `main_window.py`** — Nav buttons now use SVG icons (`icon_inventory`, `icon_users`, `icon_report`, `icon_logout`)
+- **Both `inventory_view.py`** — All toolbar/action buttons use SVG icons; search inputs have search `addAction`
+- **Both `item_form.py`** — Save button shows `icon_add` (new) or `icon_edit` (edit) based on context
+- **Both `user_management.py`** — Toolbar buttons (Add, Change Password/Role, Remove, Refresh) and table row buttons (Edit, Delete) now use SVG icons
+- **Both `main.py`** — Use shared `build_stylesheet()` instead of inline duplicate QSS; removed `GLOBAL_STYLESHEET` from Insumos `main_window.py`
+- **Equipos `item_form.py`**, **Insumos `item_form.py`** — Removed `_apply_styles()` method (overridden by global QSS via object names)
+
+### Fixed
+- **Import path conflict** (`equipos/main.py`): Removed `_equipos_dir` from `sys.path` to prevent `config` resolving to legacy `equipos/config.py` instead of `inventory_app_qt/config/` package
+
+## 2026-07-08 — Phase 2: Equipos PyQt5 Architecture Refactor
+
+### Added
+- **`equipos/inventory_app_qt/config/settings.py`** — Self-contained settings module providing `COLUMNS`, `APP_NAME`, `USERS_FILE`, `get_excel_path()`, `load_extra_columns()`
+- **`equipos/inventory_app_qt/services/excel_service.py`** — `ExcelService` class mirroring Insumos pattern with load/save/add/update/delete operations
+- **`equipos/inventory_app_qt/config/__init__.py`**, **`utils/__init__.py`** — Package init stubs
+- **Windows SSO type selector** in `UserFormDialog` (`user_management.py`) — Radio buttons for "Local" vs "Windows SSO" authentication method
+
+### Changed
+- **All import paths** in `equipos/inventory_app_qt/` updated from flat module references to `config.settings.*`, `services.excel_service.ExcelService`, etc.
+- `config/settings.py` imports from `path_config` (project root) via `sys.path.insert`
+
+## 2026-07-07 — Phase 1: Bug Fixes
+
+### Fixed
+- `auth_service.py:12` — `os.sys.path` → `sys.path` (AttributeError prevention)
+- `auth_manager.py:122` — bare `except:` → `except Exception:` with logged traceback
+- `equipos/config.py:57` — bare `except:` → `except Exception:` with logged traceback
+- `inventory_view.py` — QTimer leak: added `deleteLater()` and parented timer to `self`
 
 ## 2026-06-27 — Equipos PyQt5 Migration
 

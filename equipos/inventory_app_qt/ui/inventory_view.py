@@ -23,8 +23,10 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QFont, QColor, QBrush
 
-from config import COLUMNS
+from config.settings import COLUMNS
 from services.auth_service import can_add, can_edit, can_delete
+from utils.excel_utils import is_file_locked
+from icons import icon_add, icon_edit, icon_delete, icon_refresh, icon_search
 from ui.item_form import ItemForm
 
 
@@ -53,12 +55,14 @@ class InventoryView(QWidget):
         self._search_input = QLineEdit()
         self._search_input.setPlaceholderText("Search across all fields...")
         self._search_input.setMinimumHeight(32)
+        self._search_input.addAction(icon_search(TEXT_MUTED, 18), QLineEdit.LeadingPosition)
         self._search_input.textChanged.connect(self._on_search)
         toolbar.addWidget(self._search_input)
 
-        refresh_btn = QPushButton("Refresh")
+        refresh_btn = QPushButton(icon_refresh(TEXT_DARK), "Refresh")
         refresh_btn.setObjectName("actionBtn")
         refresh_btn.setMinimumHeight(36)
+        refresh_btn.setIconSize(refresh_btn.iconSize() * 1.2)
         refresh_btn.clicked.connect(self.refresh)
         toolbar.addWidget(refresh_btn)
 
@@ -87,24 +91,27 @@ class InventoryView(QWidget):
         action_bar = QHBoxLayout()
 
         if can_add(self._session):
-            self._add_btn = QPushButton("Add Item")
+            self._add_btn = QPushButton(icon_add(WHITE, 18), "Add Item")
             self._add_btn.setObjectName("primaryBtn")
             self._add_btn.setMinimumHeight(36)
+            self._add_btn.setIconSize(self._add_btn.iconSize() * 1.2)
             self._add_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
             self._add_btn.clicked.connect(self._add_item)
             action_bar.addWidget(self._add_btn)
 
-        self._edit_btn = QPushButton("Edit Selected")
+        self._edit_btn = QPushButton(icon_edit(TEXT_DARK, 18), "Edit Selected")
         self._edit_btn.setMinimumHeight(36)
+        self._edit_btn.setIconSize(self._edit_btn.iconSize() * 1.2)
         self._edit_btn.setFont(QFont("Segoe UI", 10))
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._edit_item)
         action_bar.addWidget(self._edit_btn)
 
         if can_delete(self._session):
-            self._delete_btn = QPushButton("Delete")
+            self._delete_btn = QPushButton(icon_delete(PRIMARY, 18), "Delete")
             self._delete_btn.setObjectName("dangerBtn")
             self._delete_btn.setMinimumHeight(36)
+            self._delete_btn.setIconSize(self._delete_btn.iconSize() * 1.2)
             self._delete_btn.setFont(QFont("Segoe UI", 10))
             self._delete_btn.setEnabled(False)
             self._delete_btn.clicked.connect(self._delete_item)
@@ -160,9 +167,10 @@ class InventoryView(QWidget):
         """)
 
     def _on_search(self, text):
-        if hasattr(self, '_search_timer') and self._search_timer:
+        if hasattr(self, '_search_timer') and self._search_timer is not None:
             self._search_timer.stop()
-        self._search_timer = QTimer()
+            self._search_timer.deleteLater()
+        self._search_timer = QTimer(self)
         self._search_timer.setSingleShot(True)
         self._search_timer.timeout.connect(self._do_search)
         self._search_timer.start(200)
@@ -204,7 +212,7 @@ class InventoryView(QWidget):
             self._items = self._client.get_all_items()
             self._populate_table(self._items)
             self._status_label.setText(
-                f"{len(self._items)} record(s) loaded.  \u2022  {self._client.file_path}"
+                f"{len(self._items)} record(s) loaded.  \u2022  {self._client.filepath}"
             )
         except Exception as e:
             QMessageBox.critical(self, "Error", f"Could not read file:\n{e}")
@@ -232,7 +240,7 @@ class InventoryView(QWidget):
         return next((i for i in self._items if str(i.get("_row", "")) == str(item_id)), None)
 
     def _check_lock(self):
-        if self._client.is_locked():
+        if is_file_locked(self._client.filepath):
             reply = QMessageBox.question(
                 self, "File In Use",
                 "The inventory file appears to be open in Excel by another user.\n\n"

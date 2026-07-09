@@ -19,10 +19,12 @@ from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
     QPushButton, QHeaderView, QMessageBox, QLabel, QDialog,
     QLineEdit, QFormLayout, QComboBox, QAbstractItemView,
+    QRadioButton, QButtonGroup,
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
+from icons import icon_add, icon_edit, icon_delete, icon_users
 from services.auth_service import (
     load_users, save_users, hash_password,
     users_to_list, users_from_list,
@@ -50,28 +52,32 @@ class UserManagementView(QWidget):
 
         toolbar = QHBoxLayout()
 
-        self._add_btn = QPushButton("Add User")
+        self._add_btn = QPushButton(icon_add(WHITE, 18), "Add User")
         self._add_btn.setObjectName("primaryBtn")
         self._add_btn.setMinimumHeight(36)
+        self._add_btn.setIconSize(self._add_btn.iconSize() * 1.2)
         self._add_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         self._add_btn.clicked.connect(self._add_user)
         toolbar.addWidget(self._add_btn)
 
-        self._change_pwd_btn = QPushButton("Change Password")
+        self._change_pwd_btn = QPushButton(icon_edit(TEXT_DARK, 18), "Change Password")
         self._change_pwd_btn.setMinimumHeight(36)
+        self._change_pwd_btn.setIconSize(self._change_pwd_btn.iconSize() * 1.2)
         self._change_pwd_btn.setEnabled(False)
         self._change_pwd_btn.clicked.connect(self._change_password)
         toolbar.addWidget(self._change_pwd_btn)
 
-        self._change_role_btn = QPushButton("Change Role")
+        self._change_role_btn = QPushButton(icon_users(TEXT_DARK, 18), "Change Role")
         self._change_role_btn.setMinimumHeight(36)
+        self._change_role_btn.setIconSize(self._change_role_btn.iconSize() * 1.2)
         self._change_role_btn.setEnabled(False)
         self._change_role_btn.clicked.connect(self._change_role)
         toolbar.addWidget(self._change_role_btn)
 
-        self._remove_btn = QPushButton("Remove User")
+        self._remove_btn = QPushButton(icon_delete(PRIMARY, 18), "Remove User")
         self._remove_btn.setObjectName("dangerBtn")
         self._remove_btn.setMinimumHeight(36)
+        self._remove_btn.setIconSize(self._remove_btn.iconSize() * 1.2)
         self._remove_btn.setEnabled(False)
         self._remove_btn.clicked.connect(self._remove_user)
         toolbar.addWidget(self._remove_btn)
@@ -163,11 +169,12 @@ class UserManagementView(QWidget):
         dialog = _UserFormDialog("Add User")
         if dialog.exec_():
             data = dialog.get_data()
+            user_type = data.get("user_type", "local")
             new_user = {
                 "username": data["username"].strip(),
-                "password": hash_password(data["password"]),
+                "password": hash_password(data["password"]) if data.get("password") else "",
                 "role": data["role"],
-                "type": "local",
+                "type": user_type,
                 "status": "active",
             }
             prev = load_users()
@@ -231,23 +238,55 @@ class UserManagementView(QWidget):
 
 class _UserFormDialog(QDialog):
 
-    def __init__(self, title):
+    def __init__(self, title, user=None):
         super().__init__()
+        self._user = user
         self._data = None
         self._init_ui(title)
 
     def _init_ui(self, title):
         self.setWindowTitle(title)
         self.setModal(True)
-        self.setFixedSize(360, 200)
+        self.setFixedSize(400, 320)
 
         layout = QVBoxLayout()
+        layout.setSpacing(12)
+
+        header = QLabel(title)
+        header.setFont(QFont("Segoe UI", 14, QFont.Bold))
+        header.setAlignment(Qt.AlignCenter)
+        layout.addWidget(header)
+
         form = QFormLayout()
+        form.setSpacing(10)
 
         self._username_input = QLineEdit()
         self._username_input.setPlaceholderText("Enter username")
         self._username_input.setMinimumHeight(32)
+        if self._user:
+            self._username_input.setText(self._user["username"])
+            self._username_input.setEnabled(False)
         form.addRow("Username:", self._username_input)
+
+        type_widget = QWidget()
+        type_layout = QHBoxLayout(type_widget)
+        type_layout.setContentsMargins(0, 0, 0, 0)
+        self._type_group = QButtonGroup()
+        self._local_radio = QRadioButton("Local")
+        self._windows_radio = QRadioButton("Windows SSO")
+        self._type_group.addButton(self._local_radio, 1)
+        self._type_group.addButton(self._windows_radio, 2)
+        type_layout.addWidget(self._local_radio)
+        type_layout.addWidget(self._windows_radio)
+
+        current_type = (self._user or {}).get("type", "local")
+        if current_type == "windows":
+            self._windows_radio.setChecked(True)
+        else:
+            self._local_radio.setChecked(True)
+
+        self._type_group.buttonClicked.connect(self._on_type_changed)
+        form.addRow("Type:", type_widget)
 
         self._password_input = QLineEdit()
         self._password_input.setPlaceholderText("Enter password")
@@ -255,9 +294,17 @@ class _UserFormDialog(QDialog):
         self._password_input.setMinimumHeight(32)
         form.addRow("Password:", self._password_input)
 
+        self._password_note = QLabel("")
+        self._password_note.setStyleSheet(f"color: {TEXT_MUTED}; font-size: 9pt;")
+        form.addRow("", self._password_note)
+
         self._role_combo = QComboBox()
         self._role_combo.addItems(["viewer", "editor", "admin"])
         self._role_combo.setMinimumHeight(32)
+        if self._user:
+            idx = self._role_combo.findText(self._user.get("role", "viewer"))
+            if idx >= 0:
+                self._role_combo.setCurrentIndex(idx)
         form.addRow("Role:", self._role_combo)
 
         layout.addLayout(form)
@@ -267,18 +314,24 @@ class _UserFormDialog(QDialog):
         save_btn = QPushButton("Save")
         save_btn.setObjectName("primaryBtn")
         save_btn.setMinimumHeight(36)
+        save_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         save_btn.clicked.connect(self._save)
         btn_layout.addWidget(save_btn)
 
         cancel_btn = QPushButton("Cancel")
         cancel_btn.setObjectName("cancelBtn")
         cancel_btn.setMinimumHeight(36)
+        cancel_btn.setFont(QFont("Segoe UI", 10))
         cancel_btn.clicked.connect(self.reject)
         btn_layout.addWidget(cancel_btn)
 
         layout.addLayout(btn_layout)
         self.setLayout(layout)
 
+        self._on_type_changed()
+        self._apply_styles()
+
+    def _apply_styles(self):
         self.setStyleSheet(f"""
             #primaryBtn {{
                 background-color: {PRIMARY};
@@ -303,18 +356,40 @@ class _UserFormDialog(QDialog):
             }}
         """)
 
+    def _on_type_changed(self):
+        is_local = self._local_radio.isChecked()
+        self._password_input.setEnabled(is_local)
+        if is_local:
+            self._password_input.setPlaceholderText("Enter password")
+            self._password_note.setText("")
+        else:
+            self._password_input.setPlaceholderText("No password needed (Windows SSO)")
+            self._password_input.setText("")
+            self._password_note.setText("Authentication uses the Windows session")
+
     def _save(self):
-        if not self._username_input.text().strip():
+        username = self._username_input.text().strip()
+        password = self._password_input.text().strip()
+        role = self._role_combo.currentText()
+        user_type = "local" if self._local_radio.isChecked() else "windows"
+
+        if not username:
             QMessageBox.warning(self, "Validation", "Username cannot be empty.")
             return
-        if not self._password_input.text().strip():
-            QMessageBox.warning(self, "Validation", "Password cannot be empty.")
-            return
+
+        if user_type == "local":
+            is_new = self._user is None
+            if is_new and not password:
+                QMessageBox.warning(self, "Validation", "Password is required for local users.")
+                return
+
         self._data = {
-            "username": self._username_input.text().strip(),
-            "password": self._password_input.text().strip(),
-            "role": self._role_combo.currentText(),
+            "username": username,
+            "role": role,
+            "user_type": user_type,
         }
+        if password:
+            self._data["password"] = password
         self.accept()
 
     def get_data(self):

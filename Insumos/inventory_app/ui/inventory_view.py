@@ -25,6 +25,7 @@ from theme import (
     PRIMARY, SECONDARY, ACCENT, LIGHT_BG, WHITE, DARK_RED,
     TEXT_DARK, TEXT_MUTED, BORDER, HOVER, ROLE_COLORS,
 )
+from icons import icon_add, icon_edit, icon_delete, icon_refresh, icon_search
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
@@ -60,6 +61,7 @@ class InventoryView(QWidget):
         self._search_input = QLineEdit()
         self._search_input.setPlaceholderText("Buscar por nombre de producto...")
         self._search_input.setMinimumHeight(32)
+        self._search_input.addAction(icon_search(TEXT_MUTED, 18), QLineEdit.LeadingPosition)
         self._search_input.textChanged.connect(self._filter_table)
         toolbar.addWidget(self._search_input)
 
@@ -67,9 +69,10 @@ class InventoryView(QWidget):
         self._show_inactive_cb.stateChanged.connect(self._filter_table)
         toolbar.addWidget(self._show_inactive_cb)
 
-        refresh_btn = QPushButton("Actualizar")
+        refresh_btn = QPushButton(icon_refresh(TEXT_DARK), "Actualizar")
         refresh_btn.setObjectName("actionBtn")
         refresh_btn.setMinimumHeight(36)
+        refresh_btn.setIconSize(refresh_btn.iconSize() * 1.2)
         refresh_btn.clicked.connect(self.refresh)
         toolbar.addWidget(refresh_btn)
 
@@ -96,23 +99,26 @@ class InventoryView(QWidget):
 
         action_bar = QHBoxLayout()
 
-        self._add_btn = QPushButton("Agregar Insumo")
+        self._add_btn = QPushButton(icon_add(WHITE, 18), "Agregar Insumo")
         self._add_btn.setObjectName("primaryBtn")
         self._add_btn.setMinimumHeight(36)
+        self._add_btn.setIconSize(self._add_btn.iconSize() * 1.2)
         self._add_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         self._add_btn.clicked.connect(self._add_item)
         action_bar.addWidget(self._add_btn)
 
-        self._edit_btn = QPushButton("Editar Seleccionado")
+        self._edit_btn = QPushButton(icon_edit(TEXT_DARK, 18), "Editar Seleccionado")
         self._edit_btn.setMinimumHeight(36)
+        self._edit_btn.setIconSize(self._edit_btn.iconSize() * 1.2)
         self._edit_btn.setFont(QFont("Segoe UI", 10))
         self._edit_btn.setEnabled(False)
         self._edit_btn.clicked.connect(self._edit_item)
         action_bar.addWidget(self._edit_btn)
 
-        self._delete_btn = QPushButton("Desactivar")
+        self._delete_btn = QPushButton(icon_delete(PRIMARY, 18), "Desactivar")
         self._delete_btn.setObjectName("dangerBtn")
         self._delete_btn.setMinimumHeight(36)
+        self._delete_btn.setIconSize(self._delete_btn.iconSize() * 1.2)
         self._delete_btn.setFont(QFont("Segoe UI", 10))
         self._delete_btn.setEnabled(False)
         self._delete_btn.clicked.connect(self._delete_item)

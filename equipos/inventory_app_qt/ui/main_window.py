@@ -15,6 +15,7 @@ from theme import (
     PRIMARY, SECONDARY, ACCENT, LIGHT_BG, WHITE, DARK_RED,
     TEXT_DARK, TEXT_MUTED, BORDER, HOVER, ROLE_COLORS, LOGO_PATH, LOGO_WIDTH,
 )
+from icons import icon_inventory, icon_users, icon_logout
 
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
@@ -110,20 +111,23 @@ class MainWindow(QMainWindow):
 
         nav_layout.addStretch()
 
-        self._btn_inventory = QPushButton("Inventory")
+        self._btn_inventory = QPushButton(icon_inventory(TEXT_DARK), "Inventory")
         self._btn_inventory.setObjectName("navBtn")
+        self._btn_inventory.setIconSize(self._btn_inventory.iconSize() * 1.2)
         self._btn_inventory.clicked.connect(lambda: self._switch_view(0))
         nav_layout.addWidget(self._btn_inventory)
 
         from services.auth_service import can_manage
         if can_manage(self._session):
-            self._btn_users = QPushButton("Users")
+            self._btn_users = QPushButton(icon_users(TEXT_DARK), "Users")
             self._btn_users.setObjectName("navBtn")
+            self._btn_users.setIconSize(self._btn_users.iconSize() * 1.2)
             self._btn_users.clicked.connect(lambda: self._switch_view(1))
             nav_layout.addWidget(self._btn_users)
 
-        logout_btn = QPushButton("Logout")
+        logout_btn = QPushButton(icon_logout(WHITE, 18), "Logout")
         logout_btn.setObjectName("logoutBtn")
+        logout_btn.setIconSize(logout_btn.iconSize() * 1.2)
         logout_btn.clicked.connect(self._logout)
         nav_layout.addWidget(logout_btn)
 
@@ -131,69 +135,9 @@ class MainWindow(QMainWindow):
 
     def _apply_styles(self):
         self.setStyleSheet(f"""
-            QMainWindow {{
-                background-color: {WHITE};
-            }}
-            QWidget {{
-                font-family: "Segoe UI", "Arial", sans-serif;
-                color: {TEXT_DARK};
-            }}
-            QLabel {{
-                color: {TEXT_DARK};
-            }}
-            QLineEdit {{
-                border: 1px solid {BORDER};
-                border-radius: 4px;
-                padding: 4px 8px;
-                background-color: {WHITE};
-                color: {TEXT_DARK};
-            }}
-            QLineEdit:focus {{
-                border-color: {PRIMARY};
-            }}
-            QPushButton {{
-                background-color: {WHITE};
-                color: {TEXT_DARK};
-                border: 1px solid {BORDER};
-                border-radius: 4px;
-                padding: 6px 16px;
-                font-size: 13px;
-            }}
-            QPushButton:hover {{
-                background-color: {LIGHT_BG};
-                border-color: {SECONDARY};
-            }}
-            QPushButton:pressed {{
-                background-color: {BORDER};
-            }}
             #navBar {{
                 background-color: {WHITE};
                 border-bottom: 2px solid {PRIMARY};
-            }}
-            #navBtn {{
-                background-color: transparent;
-                color: {TEXT_DARK};
-                border: none;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-size: 13px;
-                font-weight: bold;
-            }}
-            #navBtn:hover {{
-                background-color: {LIGHT_BG};
-                color: {PRIMARY};
-            }}
-            #logoutBtn {{
-                background-color: {PRIMARY};
-                color: {WHITE};
-                border: none;
-                border-radius: 4px;
-                padding: 8px 16px;
-                font-size: 13px;
-                font-weight: bold;
-            }}
-            #logoutBtn:hover {{
-                background-color: {DARK_RED};
             }}
         """)
 
