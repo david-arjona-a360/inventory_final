@@ -1,8 +1,8 @@
 import os
 import openpyxl
 
-from config.settings import COLUMNS, SHEET_NAME, get_excel_path
-from core.excel.utils import is_file_locked, backup_file, get_header_map, row_to_dict
+from config.settings import COLUMNS, SHEET_NAME, get_excel_path, HEADER_MIGRATION
+from core.excel.utils import is_file_locked, backup_file, get_header_map, row_to_dict, migrate_headers
 
 
 class ExcelService:
@@ -24,6 +24,7 @@ class ExcelService:
                 "The Excel file is currently open in another program.\n"
                 "Please close it and try again."
             )
+        migrate_headers(path, HEADER_MIGRATION, SHEET_NAME)
         self._wb = openpyxl.load_workbook(path)
         return self._wb
 

@@ -1,7 +1,7 @@
 import os
 import openpyxl
-from config import COLUMNS, SHEET_NAME
-from core.excel.utils import is_file_locked, backup_file, get_header_map, row_to_dict
+from config import COLUMNS, SHEET_NAME, HEADER_MIGRATION
+from core.excel.utils import is_file_locked, backup_file, get_header_map, row_to_dict, migrate_headers
 
 
 class ExcelClient:
@@ -9,6 +9,7 @@ class ExcelClient:
 
     def __init__(self, file_path: str):
         self.file_path = file_path
+        migrate_headers(file_path, HEADER_MIGRATION, SHEET_NAME)
 
     def _load_workbook(self):
         return openpyxl.load_workbook(self.file_path)

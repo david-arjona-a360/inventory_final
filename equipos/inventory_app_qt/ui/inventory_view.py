@@ -290,7 +290,7 @@ class InventoryView(QWidget):
             return
 
         name = (
-            f"{item.get('FIRST NAME', '')} {item.get('LAST NAME', '')}".strip()
+            f"{item.get('Nombre', '')} {item.get('Apellido', '')}".strip()
             or f"row {item['_row']}"
         )
         reply = QMessageBox.question(

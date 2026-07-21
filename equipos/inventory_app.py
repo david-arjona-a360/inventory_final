@@ -373,7 +373,7 @@ class InventoryApp(tk.Tk):
             return
 
         name = (
-            f"{item.get('FIRST NAME', '')} {item.get('LAST NAME', '')}".strip()
+            f"{item.get('Nombre', '')} {item.get('Apellido', '')}".strip()
             or f"row {item['_row']}"
         )
         if not messagebox.askyesno("Confirm Delete",

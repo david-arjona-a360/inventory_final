@@ -17,17 +17,19 @@ APP_VERSION = "1.0.0"
 FILE_NAME = "Formato_Inventario_TI.xlsx"
 SHEET_NAME = "Sheet1"
 
-BASE_COLUMNS = [
-    "FIRST NAME",
-    "LAST NAME",
-    "LAPTOP/DESKTOP",
-    "DEVICE SERIAL",
-    "MONITOR 1",
-    "MONITOR 1 SERIAL",
-    "MONITOR 2",
-    "MONITOR 2 SERIAL",
-    "LOCATION",
-]
+HEADER_MIGRATION = {
+    "FIRST NAME": "Nombre",
+    "LAST NAME": "Apellido",
+    "LAPTOP/DESKTOP": "Tipo de Equipo",
+    "DEVICE SERIAL": "No. Serie",
+    "MONITOR 1": "Monitor 1",
+    "MONITOR 1 SERIAL": "Serie Monitor 1",
+    "MONITOR 2": "Monitor 2",
+    "MONITOR 2 SERIAL": "Serie Monitor 2",
+    "LOCATION": "Ubicacion",
+}
+
+BASE_COLUMNS = list(HEADER_MIGRATION.values())
 
 EXTRA_COLUMN_INDICES = list(range(9, 14))
 

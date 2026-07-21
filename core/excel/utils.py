@@ -48,3 +48,22 @@ def row_to_dict(sheet, row_num, columns, header_map, check_empty=False):
     if check_empty and all_empty:
         return None
     return item
+
+
+def migrate_headers(filepath, header_map, sheet_name="Sheet1"):
+    import openpyxl
+    if not os.path.exists(filepath) or is_file_locked(filepath):
+        return False
+    wb = openpyxl.load_workbook(filepath)
+    ws = wb[sheet_name] if sheet_name in wb.sheetnames else wb.active
+    headers = [cell.value for cell in ws[1]]
+    changed = False
+    for col_idx, header in enumerate(headers, 1):
+        if header and header in header_map:
+            ws.cell(row=1, column=col_idx, value=header_map[header])
+            changed = True
+    if changed:
+        backup_file(filepath)
+        wb.save(filepath)
+    wb.close()
+    return changed

@@ -19,22 +19,20 @@ USERS_JSON_PATH = resource_path("users.json")
 FILE_NAME = "Formato_Inventario_TI.xlsx"
 SHEET_NAME = "Sheet1"
 
-BASE_COLUMNS = [
-    "FIRST NAME",
-    "LAST NAME",
-    "LAPTOP/DESKTOP",
-    "DEVICE SERIAL",
-    "MONITOR 1",
-    "MONITOR 1 SERIAL",
-    "MONITOR 2",
-    "MONITOR 2 SERIAL",
-    "LOCATION",
-]
+HEADER_MIGRATION = {
+    "FIRST NAME": "Nombre",
+    "LAST NAME": "Apellido",
+    "LAPTOP/DESKTOP": "Tipo de Equipo",
+    "DEVICE SERIAL": "No. Serie",
+    "MONITOR 1": "Monitor 1",
+    "MONITOR 1 SERIAL": "Serie Monitor 1",
+    "MONITOR 2": "Monitor 2",
+    "MONITOR 2 SERIAL": "Serie Monitor 2",
+    "LOCATION": "Ubicacion",
+}
 
-# Runtime column list — starts as BASE_COLUMNS, extended by load_extra_columns()
-COLUMNS = BASE_COLUMNS.copy()
+BASE_COLUMNS = list(HEADER_MIGRATION.values())
 
-# 0-based indices for columns J(9) through N(13)
 EXTRA_COLUMN_INDICES = list(range(9, 14))
 
 
