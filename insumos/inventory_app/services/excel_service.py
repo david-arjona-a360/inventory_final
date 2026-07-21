@@ -14,7 +14,7 @@ from config.settings import (
     get_excel_path, MAIN_SHEET, HISTORY_SHEET, HIDDEN_COLUMNS,
     VISIBLE_COLUMNS, COLUMN_MAP
 )
-from utils.excel_utils import is_file_locked
+from core.excel.utils import is_file_locked
 
 _DIAG_LOG_EXCEL = os.path.join(tempfile.gettempdir(), "inventory_diag.log")
 logging.basicConfig(

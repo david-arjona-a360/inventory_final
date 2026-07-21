@@ -3,7 +3,7 @@ import shutil
 import openpyxl
 
 from config.settings import COLUMNS, SHEET_NAME, get_excel_path
-from utils.excel_utils import is_file_locked
+from core.excel.utils import is_file_locked
 
 
 class ExcelService:

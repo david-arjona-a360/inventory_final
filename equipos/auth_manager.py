@@ -5,13 +5,15 @@
 
 import os
 import json
-import hashlib
 import subprocess
 import sys
 import shutil
 import logging
 import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
+
+from core.auth.utils import hash_password as _hash
+from core.auth.utils import get_windows_username as _windows_username
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("auth_manager")
@@ -57,10 +59,6 @@ ROLES = ("admin", "editor", "viewer")
 #  Internal helpers
 # ──────────────────────────────────────────────
 
-def _hash(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
-
-
 def _load_users() -> dict:
     if not os.path.exists(USERS_FILE):
         _bootstrap_users()
@@ -89,10 +87,6 @@ def _bootstrap_users():
     }
     _save_users(default)
 
-
-def _windows_username() -> str:
-    """Return the current Windows login username, lowercase."""
-    return (os.environ.get("USERNAME") or os.environ.get("USER") or "").lower().strip()
 
 
 # ──────────────────────────────────────────────

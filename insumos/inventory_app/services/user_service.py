@@ -2,6 +2,8 @@ import json
 import os
 import hashlib
 
+from core.auth.utils import hash_password as _hash_password
+from core.auth.utils import get_windows_username
 from config.settings import USERS_FILE
 
 
@@ -17,7 +19,7 @@ class UserService:
         os.makedirs(os.path.dirname(self._users_file), exist_ok=True)
         if not os.path.exists(self._users_file):
             default_users = [
-                {"username": "admin", "password": self._hash_password("admin"), "role": "admin", "type": "local"},
+                {"username": "admin", "password": _hash_password("admin"), "role": "admin", "type": "local"},
             ]
             self._save_users(default_users)
 
@@ -39,14 +41,6 @@ class UserService:
         with open(self._users_file, "r") as f:
             self._last_content_hash = hashlib.md5(f.read().encode()).hexdigest()
 
-    @staticmethod
-    def _hash_password(password):
-        return hashlib.sha256(password.encode()).hexdigest()
-
-    @staticmethod
-    def get_windows_username():
-        return (os.environ.get("USERNAME") or os.environ.get("USER") or "").lower()
-
     def find_by_username(self, username):
         users = self._load_users()
         username = username.lower()
@@ -56,7 +50,7 @@ class UserService:
         return None
 
     def try_windows_sso(self):
-        win_user = self.get_windows_username()
+        win_user = get_windows_username()
         if not win_user:
             return None
         users = self._load_users()
@@ -74,11 +68,11 @@ class UserService:
                 continue
             user_type = user.get("type", "local")
             if user_type == "windows":
-                if username.lower() == self.get_windows_username():
+                if username.lower() == get_windows_username():
                     self._current_user = user
                     return user
                 return None
-            if user.get("password") == self._hash_password(password):
+            if user.get("password") == _hash_password(password):
                 self._current_user = user
                 return user
         return None
@@ -106,7 +100,7 @@ class UserService:
         if user_type == "local":
             if not password:
                 raise ValueError("Password is required for local users")
-            user["password"] = self._hash_password(password)
+            user["password"] = _hash_password(password)
         else:
             user["password"] = ""
         users.append(user)
@@ -126,7 +120,7 @@ class UserService:
                         user["password"] = ""
                 if password:
                     if user.get("type", "local") == "local":
-                        user["password"] = self._hash_password(password)
+                        user["password"] = _hash_password(password)
                 self._save_users(users)
                 return
         raise ValueError(f"User '{username}' not found")

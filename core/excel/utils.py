@@ -1,5 +1,7 @@
 import os
-import sys
+import shutil
+import tempfile
+
 
 def is_file_locked(filepath):
     if not os.path.exists(filepath):
@@ -11,8 +13,6 @@ def is_file_locked(filepath):
 
 
 def safe_copy_for_reading(filepath):
-    import tempfile
-    import shutil
     if not os.path.exists(filepath):
         raise FileNotFoundError(f"File not found: {filepath}")
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")

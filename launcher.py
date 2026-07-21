@@ -12,6 +12,11 @@ def _get_base_dir():
 
 BASE_DIR = _get_base_dir()
 
+# ── Core shared module ─────────────────────────────────────────────────────
+_core_dir = os.path.join(BASE_DIR, "core")
+if _core_dir not in sys.path:
+    sys.path.insert(0, _core_dir)
+
 # ── App dispatch (PyInstaller multi-call) ──────────────────────────────────
 if len(sys.argv) > 1:
     if sys.argv[1] == "--app-insumos":

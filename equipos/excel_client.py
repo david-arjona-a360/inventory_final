@@ -8,6 +8,7 @@ import os
 import shutil
 import openpyxl
 from config import COLUMNS, SHEET_NAME
+from core.excel.utils import is_file_locked
 
 
 class ExcelClient:
@@ -54,14 +55,8 @@ class ExcelClient:
     # ── File lock detection ───────────────────────────────────────────────────
 
     def is_locked(self) -> bool:
-        """
-        Excel creates a hidden lock file (~$filename.xlsx) when the file
-        is open. We use this to warn about concurrent access.
-        """
-        folder   = os.path.dirname(self.file_path)
-        filename = os.path.basename(self.file_path)
-        lock     = os.path.join(folder, f"~${filename}")
-        return os.path.exists(lock)
+        """Delegate to shared core utility."""
+        return is_file_locked(self.file_path)
 
     # ── Public API ────────────────────────────────────────────────────────────
 

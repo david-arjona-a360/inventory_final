@@ -1,9 +1,10 @@
 import os
 import sys
 import json
-import hashlib
 import shutil
 import logging
+
+from core.auth.utils import hash_password, get_windows_username
 
 log = logging.getLogger("auth_service")
 
@@ -25,10 +26,6 @@ LOCAL_ADMIN_USERNAME = "localadmin"
 LOCAL_ADMIN_DEFAULT_PW = "Admin@1234"
 
 ROLES = ("admin", "editor", "viewer")
-
-
-def hash_password(password: str) -> str:
-    return hashlib.sha256(password.encode()).hexdigest()
 
 
 def load_users() -> dict:
@@ -86,10 +83,6 @@ def users_from_list(users_list: list) -> dict:
             "status": user.get("status", "active"),
         }
     return result
-
-
-def get_windows_username() -> str:
-    return (os.environ.get("USERNAME") or os.environ.get("USER") or "").lower().strip()
 
 
 def login() -> dict | None:

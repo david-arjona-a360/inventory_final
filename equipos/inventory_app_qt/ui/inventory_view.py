@@ -25,7 +25,7 @@ from PyQt5.QtGui import QFont, QColor, QBrush
 
 from config.settings import COLUMNS
 from services.auth_service import can_add, can_edit, can_delete
-from utils.excel_utils import is_file_locked
+from core.excel.utils import is_file_locked
 from icons import icon_add, icon_edit, icon_delete, icon_refresh, icon_search
 from ui.item_form import ItemForm
 
