@@ -24,11 +24,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 from config.settings import COLUMNS
+from core.ui.translations import ITEM_FORM_TITLE, ITEM_FORM_SAVE, ITEM_FORM_CANCEL, ITEM_FORM_PH
 
 
 class ItemForm(QDialog):
 
-    def __init__(self, item=None, title="Item Form"):
+    def __init__(self, item=None, title=ITEM_FORM_TITLE):
         super().__init__()
         self._item = item
         self._data = None
@@ -61,12 +62,12 @@ class ItemForm(QDialog):
 
         for col in COLUMNS:
             input_field = QLineEdit()
-            input_field.setPlaceholderText(f"Enter {col.title()}")
+            input_field.setPlaceholderText(ITEM_FORM_PH.format(col=col))
             input_field.setMinimumHeight(32)
             if self._item:
                 input_field.setText(str(self._item.get(col, "")))
             self._inputs[col] = input_field
-            form.addRow(f"{col.title()}:", input_field)
+            form.addRow(f"{col}:", input_field)
 
         scroll.setWidget(form_widget)
         layout.addWidget(scroll)
@@ -75,7 +76,7 @@ class ItemForm(QDialog):
 
         btn_layout = QHBoxLayout()
         icon = icon_add(WHITE, 18) if not self._item else icon_edit(WHITE, 18)
-        save_btn = QPushButton(icon, "Save")
+        save_btn = QPushButton(icon, ITEM_FORM_SAVE)
         save_btn.setObjectName("primaryBtn")
         save_btn.setMinimumHeight(36)
         save_btn.setIconSize(save_btn.iconSize() * 1.2)
@@ -83,7 +84,7 @@ class ItemForm(QDialog):
         save_btn.clicked.connect(self._save)
         btn_layout.addWidget(save_btn)
 
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton(ITEM_FORM_CANCEL)
         cancel_btn.setObjectName("cancelBtn")
         cancel_btn.setMinimumHeight(36)
         cancel_btn.setFont(QFont("Segoe UI", 10))

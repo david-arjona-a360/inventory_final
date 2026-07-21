@@ -28,6 +28,10 @@ from PyQt5.QtGui import QFont, QPixmap
 from services.auth_service import logout as auth_logout
 from ui.inventory_view import InventoryView
 from ui.user_management import UserManagementView
+from core.ui.translations import (
+    APP_TITLE, NAV_INVENTORY, NAV_USERS, NAV_LOGOUT,
+    STATUS_CONNECTED, LOGOUT_TITLE, LOGOUT_CONFIRM, MSG_ERROR,
+)
 
 
 class MainWindow(QMainWindow):
@@ -43,7 +47,7 @@ class MainWindow(QMainWindow):
             self._session.get("role", ""), self._session.get("role", "")
         )
         self.setWindowTitle(
-            f"IT Inventory - Equipos ({self._session['username']} - {role_display})"
+            f"{APP_TITLE} ({self._session['username']} - {role_display})"
         )
         self.setMinimumSize(1100, 700)
         self.setGeometry(100, 100, 1200, 750)
@@ -82,7 +86,7 @@ class MainWindow(QMainWindow):
         """)
         self.setStatusBar(self._status_bar)
         self._status_bar.showMessage(
-            f"Connected as: {self._session['username']} ({role_display})"
+            STATUS_CONNECTED.format(username=self._session['username'], role=role_display)
         )
 
         self._apply_styles()
@@ -105,13 +109,13 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-        title = QLabel("IT Inventory - Equipos")
+        title = QLabel(APP_TITLE)
         title.setFont(QFont("Segoe UI", 14, QFont.Bold))
         nav_layout.addWidget(title)
 
         nav_layout.addStretch()
 
-        self._btn_inventory = QPushButton(icon_inventory(TEXT_DARK), "Inventory")
+        self._btn_inventory = QPushButton(icon_inventory(TEXT_DARK), NAV_INVENTORY)
         self._btn_inventory.setObjectName("navBtn")
         self._btn_inventory.setIconSize(self._btn_inventory.iconSize() * 1.2)
         self._btn_inventory.clicked.connect(lambda: self._switch_view(0))
@@ -119,13 +123,13 @@ class MainWindow(QMainWindow):
 
         from services.auth_service import can_manage
         if can_manage(self._session):
-            self._btn_users = QPushButton(icon_users(TEXT_DARK), "Users")
+            self._btn_users = QPushButton(icon_users(TEXT_DARK), NAV_USERS)
             self._btn_users.setObjectName("navBtn")
             self._btn_users.setIconSize(self._btn_users.iconSize() * 1.2)
             self._btn_users.clicked.connect(lambda: self._switch_view(1))
             nav_layout.addWidget(self._btn_users)
 
-        logout_btn = QPushButton(icon_logout(WHITE, 18), "Logout")
+        logout_btn = QPushButton(icon_logout(WHITE, 18), NAV_LOGOUT)
         logout_btn.setObjectName("logoutBtn")
         logout_btn.setIconSize(logout_btn.iconSize() * 1.2)
         logout_btn.clicked.connect(self._logout)
@@ -149,8 +153,8 @@ class MainWindow(QMainWindow):
 
     def _logout(self):
         reply = QMessageBox.question(
-            self, "Logout",
-            "Are you sure you want to log out?",
+            self, LOGOUT_TITLE,
+            LOGOUT_CONFIRM,
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply == QMessageBox.Yes:

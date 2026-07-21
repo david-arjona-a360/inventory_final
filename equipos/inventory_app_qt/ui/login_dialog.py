@@ -23,6 +23,11 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont, QPixmap, QColor
 
 from services.auth_service import authenticate, get_windows_username, load_users
+from core.ui.translations import (
+    APP_TITLE_LOGIN, APP_TITLE, LOGIN_SUBTITLE, LOGIN_USERNAME_PH,
+    LOGIN_PASSWORD_PH, LOGIN_BTN, LOGIN_CANCEL, MSG_ERROR,
+    LOGIN_MISSING_USER, LOGIN_MISSING_PWD, LOGIN_FAILED,
+)
 
 
 class LoginDialog(QDialog):
@@ -33,7 +38,7 @@ class LoginDialog(QDialog):
         self._init_ui()
 
     def _init_ui(self):
-        self.setWindowTitle("IT Inventory - Login")
+        self.setWindowTitle(APP_TITLE_LOGIN)
         self.setFixedSize(440, 380)
         self.setModal(True)
         self.setAttribute(Qt.WA_TranslucentBackground, False)
@@ -71,13 +76,13 @@ class LoginDialog(QDialog):
         except Exception:
             pass
 
-        title = QLabel("IT Inventory - Equipos")
+        title = QLabel(APP_TITLE)
         title.setAlignment(Qt.AlignCenter)
         title.setFont(QFont("Segoe UI", 18, QFont.Bold))
         title.setStyleSheet(f"color: {TEXT_DARK}; background: transparent;")
         card_layout.addWidget(title)
 
-        subtitle = QLabel("Please log in to continue")
+        subtitle = QLabel(LOGIN_SUBTITLE)
         subtitle.setAlignment(Qt.AlignCenter)
         subtitle.setFont(QFont("Segoe UI", 10))
         subtitle.setStyleSheet(f"color: {TEXT_MUTED}; background: transparent;")
@@ -86,13 +91,13 @@ class LoginDialog(QDialog):
         card_layout.addSpacing(6)
 
         self._username_input = QLineEdit()
-        self._username_input.setPlaceholderText("Username")
+        self._username_input.setPlaceholderText(LOGIN_USERNAME_PH)
         self._username_input.setMinimumHeight(38)
         self._username_input.setFont(QFont("Segoe UI", 11))
         card_layout.addWidget(self._username_input)
 
         self._password_input = QLineEdit()
-        self._password_input.setPlaceholderText("Password")
+        self._password_input.setPlaceholderText(LOGIN_PASSWORD_PH)
         self._password_input.setEchoMode(QLineEdit.Password)
         self._password_input.setMinimumHeight(38)
         self._password_input.setFont(QFont("Segoe UI", 11))
@@ -105,14 +110,14 @@ class LoginDialog(QDialog):
 
         card_layout.addSpacing(6)
 
-        self._login_btn = QPushButton("Login")
+        self._login_btn = QPushButton(LOGIN_BTN)
         self._login_btn.setObjectName("primaryBtn")
         self._login_btn.setMinimumHeight(40)
         self._login_btn.setFont(QFont("Segoe UI", 11, QFont.Bold))
         self._login_btn.clicked.connect(self._do_login)
         card_layout.addWidget(self._login_btn)
 
-        cancel_btn = QPushButton("Cancel")
+        cancel_btn = QPushButton(LOGIN_CANCEL)
         cancel_btn.setObjectName("cancelBtn")
         cancel_btn.setMinimumHeight(40)
         cancel_btn.setFont(QFont("Segoe UI", 11))
@@ -127,7 +132,7 @@ class LoginDialog(QDialog):
         password = self._password_input.text().strip()
 
         if not username:
-            QMessageBox.warning(self, "Missing field", "Please enter your username.")
+            QMessageBox.warning(self, MSG_ERROR, LOGIN_MISSING_USER)
             return
 
         users = load_users()
@@ -146,14 +151,14 @@ class LoginDialog(QDialog):
                 return
 
         if not password:
-            QMessageBox.warning(self, "Missing field", "Please enter your password.")
+            QMessageBox.warning(self, MSG_ERROR, LOGIN_MISSING_PWD)
             return
 
         self._session = authenticate(username, password)
         if self._session:
             self.accept()
         else:
-            QMessageBox.warning(self, "Login Failed", "Incorrect username or password.")
+            QMessageBox.warning(self, MSG_ERROR, LOGIN_FAILED)
             self._password_input.clear()
             self._password_input.setFocus()
 

@@ -28,6 +28,14 @@ from services.auth_service import can_add, can_edit, can_delete
 from core.excel.utils import is_file_locked
 from icons import icon_add, icon_edit, icon_delete, icon_refresh, icon_search
 from ui.item_form import ItemForm
+from core.ui.translations import (
+    ITEM_HEADER, ITEM_SEARCH_PH, ITEM_REFRESH, ITEM_ADD, ITEM_EDIT, ITEM_DELETE,
+    ITEM_ADD_TITLE, ITEM_EDIT_TITLE, MSG_ERROR, MSG_NO_SELECTION, MSG_SELECT_ROW,
+    FILE_IN_USE, FILE_IN_USE_MSG, ITEM_ADDED, ITEM_UPDATED, ITEM_DELETED,
+    ITEM_DELETE_CONFIRM, ITEM_STATUS_SHOWING, ITEM_LOADING, ITEM_LOADED,
+    ITEM_LOAD_ERROR, ITEM_READ_ERROR, ITEM_ADD_ERROR, ITEM_UPDATE_ERROR,
+    ITEM_DELETE_ERROR,
+)
 
 
 class InventoryView(QWidget):
@@ -46,20 +54,20 @@ class InventoryView(QWidget):
         layout.setContentsMargins(10, 10, 10, 10)
         layout.setSpacing(10)
 
-        header = QLabel("IT Equipment Inventory")
+        header = QLabel(ITEM_HEADER)
         header.setFont(QFont("Segoe UI", 16, QFont.Bold))
         layout.addWidget(header)
 
         toolbar = QHBoxLayout()
 
         self._search_input = QLineEdit()
-        self._search_input.setPlaceholderText("Search across all fields...")
+        self._search_input.setPlaceholderText(ITEM_SEARCH_PH)
         self._search_input.setMinimumHeight(32)
         self._search_input.addAction(icon_search(TEXT_MUTED, 18), QLineEdit.LeadingPosition)
         self._search_input.textChanged.connect(self._on_search)
         toolbar.addWidget(self._search_input)
 
-        refresh_btn = QPushButton(icon_refresh(TEXT_DARK), "Refresh")
+        refresh_btn = QPushButton(icon_refresh(TEXT_DARK), ITEM_REFRESH)
         refresh_btn.setObjectName("actionBtn")
         refresh_btn.setMinimumHeight(36)
         refresh_btn.setIconSize(refresh_btn.iconSize() * 1.2)
@@ -91,7 +99,7 @@ class InventoryView(QWidget):
         action_bar = QHBoxLayout()
 
         if can_add(self._session):
-            self._add_btn = QPushButton(icon_add(WHITE, 18), "Add Item")
+            self._add_btn = QPushButton(icon_add(WHITE, 18), ITEM_ADD)
             self._add_btn.setObjectName("primaryBtn")
             self._add_btn.setMinimumHeight(36)
             self._add_btn.setIconSize(self._add_btn.iconSize() * 1.2)
@@ -99,7 +107,7 @@ class InventoryView(QWidget):
             self._add_btn.clicked.connect(self._add_item)
             action_bar.addWidget(self._add_btn)
 
-        self._edit_btn = QPushButton(icon_edit(TEXT_DARK, 18), "Edit Selected")
+        self._edit_btn = QPushButton(icon_edit(TEXT_DARK, 18), ITEM_EDIT)
         self._edit_btn.setMinimumHeight(36)
         self._edit_btn.setIconSize(self._edit_btn.iconSize() * 1.2)
         self._edit_btn.setFont(QFont("Segoe UI", 10))
@@ -108,7 +116,7 @@ class InventoryView(QWidget):
         action_bar.addWidget(self._edit_btn)
 
         if can_delete(self._session):
-            self._delete_btn = QPushButton(icon_delete(PRIMARY, 18), "Delete")
+            self._delete_btn = QPushButton(icon_delete(PRIMARY, 18), ITEM_DELETE)
             self._delete_btn.setObjectName("dangerBtn")
             self._delete_btn.setMinimumHeight(36)
             self._delete_btn.setIconSize(self._delete_btn.iconSize() * 1.2)
@@ -181,7 +189,7 @@ class InventoryView(QWidget):
         if not query:
             self._populate_table(self._items)
             self._status_label.setText(
-                f"Showing {len(self._items)} of {len(self._items)} records"
+                ITEM_STATUS_SHOWING.format(n=len(self._items), total=len(self._items))
             )
             return
         filtered = [
@@ -190,7 +198,7 @@ class InventoryView(QWidget):
         ]
         self._populate_table(filtered)
         self._status_label.setText(
-            f"Showing {len(filtered)} of {len(self._items)} records"
+            ITEM_STATUS_SHOWING.format(n=len(filtered), total=len(self._items))
         )
 
     def _on_selection_changed(self):
@@ -207,16 +215,16 @@ class InventoryView(QWidget):
                 self._delete_btn.setEnabled(False)
 
     def refresh(self):
-        self._status_label.setText("Loading...")
+        self._status_label.setText(ITEM_LOADING)
         try:
             self._items = self._client.get_all_items()
             self._populate_table(self._items)
             self._status_label.setText(
-                f"{len(self._items)} record(s) loaded.  \u2022  {self._client.filepath}"
+                ITEM_LOADED.format(n=len(self._items)) + f"  \u2022  {self._client.filepath}"
             )
         except Exception as e:
-            QMessageBox.critical(self, "Error", f"Could not read file:\n{e}")
-            self._status_label.setText("Error loading file.")
+            QMessageBox.critical(self, MSG_ERROR, ITEM_READ_ERROR.format(e=e))
+            self._status_label.setText(ITEM_LOAD_ERROR)
 
     def _populate_table(self, items):
         self._table.setSortingEnabled(False)
@@ -234,7 +242,7 @@ class InventoryView(QWidget):
 
     def _get_selected_item(self):
         if self._selected_row is None:
-            QMessageBox.information(self, "No selection", "Please select a row first.")
+            QMessageBox.information(self, MSG_NO_SELECTION, MSG_SELECT_ROW)
             return None
         item_id = self._table.item(self._selected_row, 0).data(Qt.UserRole)
         return next((i for i in self._items if str(i.get("_row", "")) == str(item_id)), None)
@@ -242,10 +250,7 @@ class InventoryView(QWidget):
     def _check_lock(self):
         if is_file_locked(self._client.filepath):
             reply = QMessageBox.question(
-                self, "File In Use",
-                "The inventory file appears to be open in Excel by another user.\n\n"
-                "Saving now may cause conflicts.\n\n"
-                "Do you want to proceed anyway?",
+                self, FILE_IN_USE, FILE_IN_USE_MSG,
                 QMessageBox.Yes | QMessageBox.No, QMessageBox.No
             )
             return reply == QMessageBox.Yes
@@ -254,7 +259,7 @@ class InventoryView(QWidget):
     def _add_item(self):
         if not self._check_lock():
             return
-        dialog = ItemForm(title="Add New Item")
+        dialog = ItemForm(title=ITEM_ADD_TITLE)
         if dialog.exec_():
             data = dialog.get_data()
             try:
@@ -262,9 +267,9 @@ class InventoryView(QWidget):
                 new_item = {"_row": new_row, **data}
                 self._items.append(new_item)
                 self.refresh()
-                self._status_label.setText("Item added successfully.")
+                self._status_label.setText(ITEM_ADDED)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Could not add item:\n{e}")
+                QMessageBox.critical(self, MSG_ERROR, ITEM_ADD_ERROR.format(e=e))
 
     def _edit_item(self):
         item = self._get_selected_item()
@@ -272,15 +277,15 @@ class InventoryView(QWidget):
             return
         if not self._check_lock():
             return
-        dialog = ItemForm(item=item, title="Edit Item")
+        dialog = ItemForm(item=item, title=ITEM_EDIT_TITLE)
         if dialog.exec_():
             data = dialog.get_data()
             try:
                 self._client.update_item(item["_row"], data)
                 self.refresh()
-                self._status_label.setText("Item updated successfully.")
+                self._status_label.setText(ITEM_UPDATED)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Could not update item:\n{e}")
+                QMessageBox.critical(self, MSG_ERROR, ITEM_UPDATE_ERROR.format(e=e))
 
     def _delete_item(self):
         item = self._get_selected_item()
@@ -294,8 +299,8 @@ class InventoryView(QWidget):
             or f"row {item['_row']}"
         )
         reply = QMessageBox.question(
-            self, "Confirm Delete",
-            f"Permanently delete record for '{name}'?",
+            self, MSG_CONFIRM,
+            ITEM_DELETE_CONFIRM.format(name=name),
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply == QMessageBox.Yes:
@@ -306,6 +311,6 @@ class InventoryView(QWidget):
                     if i["_row"] > item["_row"]:
                         i["_row"] -= 1
                 self._populate_table(self._items)
-                self._status_label.setText("Item deleted.")
+                self._status_label.setText(ITEM_DELETED)
             except Exception as e:
-                QMessageBox.critical(self, "Error", f"Could not delete item:\n{e}")
+                QMessageBox.critical(self, MSG_ERROR, ITEM_DELETE_ERROR.format(e=e))
