@@ -11,6 +11,7 @@ from theme import (
     PRIMARY, SECONDARY, ACCENT, LIGHT_BG, WHITE, DARK_RED,
     TEXT_DARK, TEXT_MUTED, BORDER, HOVER,
 )
+from icons import icon_add, icon_edit
 
 from PyQt5.QtWidgets import (
     QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
@@ -96,9 +97,11 @@ class ItemForm(QDialog):
         layout.addSpacing(10)
 
         btn_layout = QHBoxLayout()
-        save_btn = QPushButton("Guardar")
+        icon = icon_add(WHITE, 18) if not self._item else icon_edit(WHITE, 18)
+        save_btn = QPushButton(icon, "Guardar")
         save_btn.setObjectName("primaryBtn")
         save_btn.setMinimumHeight(36)
+        save_btn.setIconSize(save_btn.iconSize() * 1.2)
         save_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         save_btn.clicked.connect(self._save)
         btn_layout.addWidget(save_btn)

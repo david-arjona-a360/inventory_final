@@ -119,7 +119,7 @@ def _show_first_run_instructions():
                 # Mark as done so it doesn't show again
                 with open(flag_file, "w") as f:
                     f.write("done")
-        except:
+        except Exception:
             pass
 
 def login(parent=None) -> dict | None:

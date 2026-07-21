@@ -24,6 +24,16 @@ if len(sys.argv) > 1:
         except SystemExit:
             pass
         sys.exit(0)
+    elif sys.argv[1] == "--app-equipos-qt":
+        app_dir = os.path.join(BASE_DIR, "equipos", "inventory_app_qt")
+        sys.path.insert(0, app_dir)
+        os.chdir(os.path.join(BASE_DIR, "equipos"))
+        from main import main
+        try:
+            main()
+        except SystemExit:
+            pass
+        sys.exit(0)
     elif sys.argv[1] == "--app-equipos":
         app_dir = os.path.join(BASE_DIR, "equipos")
         sys.path.insert(0, app_dir)

@@ -11,6 +11,7 @@ from theme import (
     PRIMARY, SECONDARY, ACCENT, LIGHT_BG, WHITE, DARK_RED,
     TEXT_DARK, TEXT_MUTED, BORDER, HOVER,
 )
+from icons import icon_add, icon_edit, icon_delete, icon_refresh
 
 from PyQt5.QtWidgets import (
     QWidget, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem,
@@ -56,15 +57,17 @@ class UserManagementView(QWidget):
 
         btn_bar = QHBoxLayout()
 
-        add_user_btn = QPushButton("Agregar Usuario")
+        add_user_btn = QPushButton(icon_add(WHITE, 18), "Agregar Usuario")
         add_user_btn.setObjectName("primaryBtn")
         add_user_btn.setMinimumHeight(36)
+        add_user_btn.setIconSize(add_user_btn.iconSize() * 1.2)
         add_user_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
         add_user_btn.clicked.connect(self._add_user)
         btn_bar.addWidget(add_user_btn)
 
-        refresh_btn = QPushButton("Actualizar")
+        refresh_btn = QPushButton(icon_refresh(TEXT_DARK, 18), "Actualizar")
         refresh_btn.setMinimumHeight(36)
+        refresh_btn.setIconSize(refresh_btn.iconSize() * 1.2)
         refresh_btn.clicked.connect(self.refresh)
         btn_bar.addWidget(refresh_btn)
 
@@ -113,14 +116,14 @@ class UserManagementView(QWidget):
                 btn_layout.setContentsMargins(4, 2, 4, 2)
                 btn_layout.setSpacing(4)
 
-                edit_btn = QPushButton("Editar")
+                edit_btn = QPushButton(icon_edit(TEXT_DARK, 16), "Editar")
                 edit_btn.setMinimumHeight(28)
                 edit_btn.setFont(QFont("Segoe UI", 9))
                 edit_btn.clicked.connect(lambda checked, u=user: self._edit_user(u))
                 btn_layout.addWidget(edit_btn)
 
                 if user["username"] != self._user_service.get_current_user()["username"]:
-                    delete_btn = QPushButton("Eliminar")
+                    delete_btn = QPushButton(icon_delete(WHITE, 16), "Eliminar")
                     delete_btn.setObjectName("deleteUserBtn")
                     delete_btn.setMinimumHeight(28)
                     delete_btn.setFont(QFont("Segoe UI", 9))

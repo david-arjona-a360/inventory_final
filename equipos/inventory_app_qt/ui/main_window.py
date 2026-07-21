@@ -1,51 +1,50 @@
 import os
 import sys
+import subprocess
 
-_theme_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "..", "Theme")
-)
+_app_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_equipos_dir = os.path.dirname(_app_dir)
+if _equipos_dir not in sys.path:
+    sys.path.insert(0, _equipos_dir)
+
+_theme_dir = os.path.abspath(os.path.join(_app_dir, "..", "..", "..", "Theme"))
 if _theme_dir not in sys.path:
     sys.path.insert(0, _theme_dir)
 
 from theme import (
     PRIMARY, SECONDARY, ACCENT, LIGHT_BG, WHITE, DARK_RED,
-    TEXT_DARK, TEXT_MUTED, BORDER, HOVER, ROLE_COLORS, LOGO_PATH,
+    TEXT_DARK, TEXT_MUTED, BORDER, HOVER, ROLE_COLORS, LOGO_PATH, LOGO_WIDTH,
 )
-from icons import icon_inventory, icon_report, icon_users, icon_logout
+from icons import icon_inventory, icon_users, icon_logout
 
 from PyQt5.QtWidgets import (
     QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
     QStackedWidget, QLabel, QStatusBar, QMessageBox, QApplication,
-    QFrame, QSizePolicy
+    QFrame,
 )
-from PyQt5.QtCore import Qt, QTimer
-from PyQt5.QtGui import QFont, QIcon, QPixmap
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont, QPixmap
 
+from services.auth_service import logout as auth_logout
 from ui.inventory_view import InventoryView
 from ui.user_management import UserManagementView
-from ui.report_builder import ReportBuilderView
-from services.excel_service import ExcelService
-from services.report_service import ReportService
 
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, user_service, excel_service):
+    def __init__(self, excel_client, session):
         super().__init__()
-        self._user_service = user_service
-        self._excel = excel_service
-        self._report_service = ReportService(excel_service)
+        self._client = excel_client
+        self._session = session
         self._init_ui()
 
     def _init_ui(self):
-        user = self._user_service.get_current_user()
-        print(f"[MainWindow] Initializing UI for: {user.get('username')} ({user.get('role')})")
-
         role_display = {"admin": "Admin", "editor": "Editor", "viewer": "Viewer"}.get(
-            user.get("role", ""), user.get("role", "")
+            self._session.get("role", ""), self._session.get("role", "")
         )
-
-        self.setWindowTitle(f"Sistema de Inventario - Insumos ({user['username']} - {role_display})")
+        self.setWindowTitle(
+            f"IT Inventory - Equipos ({self._session['username']} - {role_display})"
+        )
         self.setMinimumSize(1100, 700)
         self.setGeometry(100, 100, 1200, 750)
 
@@ -55,44 +54,21 @@ class MainWindow(QMainWindow):
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
 
-        try:
-            self._nav_bar = self._create_nav_bar()
-            main_layout.addWidget(self._nav_bar)
-        except Exception as e:
-            print(f"[MainWindow] Error creating nav bar: {e}")
+        nav_bar = self._create_nav_bar()
+        main_layout.addWidget(nav_bar)
 
         self._stack = QStackedWidget()
         main_layout.addWidget(self._stack)
 
-        try:
-            self._inventory_view = InventoryView(self._excel, self._user_service)
-            self._stack.addWidget(self._inventory_view)
-        except Exception as e:
-            print(f"[MainWindow] Error creating inventory view: {e}")
-            import traceback
-            traceback.print_exc()
-            self._inventory_view = None
+        self._inventory_view = InventoryView(self._client, self._session)
+        self._stack.addWidget(self._inventory_view)
 
-        try:
-            self._report_view = ReportBuilderView(self._excel, self._report_service)
-            self._stack.addWidget(self._report_view)
-        except Exception as e:
-            print(f"[MainWindow] Error creating report view: {e}")
-            import traceback
-            traceback.print_exc()
-            self._report_view = None
+        from services.auth_service import can_manage
+        if can_manage(self._session):
+            self._user_view = UserManagementView(self._session)
+            self._stack.addWidget(self._user_view)
 
-        if self._user_service.is_admin():
-            try:
-                self._user_view = UserManagementView(self._user_service)
-                self._stack.addWidget(self._user_view)
-            except Exception as e:
-                print(f"[MainWindow] Error creating user management view: {e}")
-                import traceback
-                traceback.print_exc()
-
-        if self._inventory_view:
-            self._stack.setCurrentWidget(self._inventory_view)
+        self._stack.setCurrentWidget(self._inventory_view)
 
         self._status_bar = QStatusBar()
         self._status_bar.setStyleSheet(f"""
@@ -105,7 +81,9 @@ class MainWindow(QMainWindow):
             }}
         """)
         self.setStatusBar(self._status_bar)
-        self._status_bar.showMessage(f"Conectado como: {user['username']} ({role_display})")
+        self._status_bar.showMessage(
+            f"Connected as: {self._session['username']} ({role_display})"
+        )
 
         self._apply_styles()
 
@@ -117,7 +95,6 @@ class MainWindow(QMainWindow):
         nav_layout.setContentsMargins(15, 5, 15, 5)
         nav_layout.setSpacing(8)
 
-        # Logo
         try:
             pixmap = QPixmap(LOGO_PATH)
             scaled = pixmap.scaledToHeight(40, Qt.SmoothTransformation)
@@ -128,32 +105,27 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-        title = QLabel("Inventario de Insumos")
+        title = QLabel("IT Inventory - Equipos")
         title.setFont(QFont("Segoe UI", 14, QFont.Bold))
         nav_layout.addWidget(title)
 
         nav_layout.addStretch()
 
-        self._btn_inventory = QPushButton(icon_inventory(TEXT_DARK), "Inventario")
+        self._btn_inventory = QPushButton(icon_inventory(TEXT_DARK), "Inventory")
         self._btn_inventory.setObjectName("navBtn")
         self._btn_inventory.setIconSize(self._btn_inventory.iconSize() * 1.2)
         self._btn_inventory.clicked.connect(lambda: self._switch_view(0))
         nav_layout.addWidget(self._btn_inventory)
 
-        self._btn_reports = QPushButton(icon_report(TEXT_DARK), "Reportes")
-        self._btn_reports.setObjectName("navBtn")
-        self._btn_reports.setIconSize(self._btn_reports.iconSize() * 1.2)
-        self._btn_reports.clicked.connect(lambda: self._switch_view(1))
-        nav_layout.addWidget(self._btn_reports)
-
-        if self._user_service.is_admin():
-            self._btn_users = QPushButton(icon_users(TEXT_DARK), "Usuarios")
+        from services.auth_service import can_manage
+        if can_manage(self._session):
+            self._btn_users = QPushButton(icon_users(TEXT_DARK), "Users")
             self._btn_users.setObjectName("navBtn")
             self._btn_users.setIconSize(self._btn_users.iconSize() * 1.2)
-            self._btn_users.clicked.connect(lambda: self._switch_view(2))
+            self._btn_users.clicked.connect(lambda: self._switch_view(1))
             nav_layout.addWidget(self._btn_users)
 
-        logout_btn = QPushButton(icon_logout(WHITE, 18), "Salir")
+        logout_btn = QPushButton(icon_logout(WHITE, 18), "Logout")
         logout_btn.setObjectName("logoutBtn")
         logout_btn.setIconSize(logout_btn.iconSize() * 1.2)
         logout_btn.clicked.connect(self._logout)
@@ -177,10 +149,18 @@ class MainWindow(QMainWindow):
 
     def _logout(self):
         reply = QMessageBox.question(
-            self, "Cerrar sesión",
-            "¿Está seguro de cerrar sesión?",
+            self, "Logout",
+            "Are you sure you want to log out?",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No
         )
         if reply == QMessageBox.Yes:
-            self._user_service.logout()
+            auth_logout(self._session)
+            if hasattr(sys, '_MEIPASS'):
+                subprocess.Popen([sys.executable, '--app-equipos-qt'])
+            else:
+                launcher = os.path.join(
+                    os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+                    'launcher.py'
+                )
+                subprocess.Popen([sys.executable, launcher, '--app-equipos-qt'])
             QApplication.quit()
