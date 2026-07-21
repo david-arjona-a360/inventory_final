@@ -11,7 +11,7 @@ a = Analysis(
     hiddenimports=[
         'openpyxl', 'openpyxl.styles', 'openpyxl.utils',
         'PIL', 'PIL.Image', 'PIL.ImageTk',
-        'PyQt5', 'PyQt5.QtWidgets', 'PyQt5.QtCore', 'PyQt5.QtGui', 'PyQt5.sip',
+        'PyQt5', 'PyQt5.QtWidgets', 'PyQt5.QtCore', 'PyQt5.QtGui', 'PyQt5.QtSvg', 'PyQt5.sip',
         'fpdf',
         'path_config',
         'tkinter', 'tkinter.ttk', 'tkinter.simpledialog', 'tkinter.filedialog',
