@@ -7,7 +7,7 @@ a = Analysis(
     ['launcher.py'],
     pathex=[],
     binaries=[],
-    datas=[('Insumos', 'Insumos'), ('equipos', 'equipos'), ('Theme', 'Theme')],
+    datas=[('insumos', 'insumos'), ('equipos', 'equipos'), ('Theme', 'Theme')],
     hiddenimports=[
         'openpyxl', 'openpyxl.styles', 'openpyxl.utils',
         'PIL', 'PIL.Image', 'PIL.ImageTk',

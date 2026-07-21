@@ -15,9 +15,9 @@ BASE_DIR = _get_base_dir()
 # ── App dispatch (PyInstaller multi-call) ──────────────────────────────────
 if len(sys.argv) > 1:
     if sys.argv[1] == "--app-insumos":
-        app_dir = os.path.join(BASE_DIR, "Insumos", "inventory_app")
+        app_dir = os.path.join(BASE_DIR, "insumos", "inventory_app")
         sys.path.insert(0, app_dir)
-        os.chdir(os.path.join(BASE_DIR, "Insumos"))
+        os.chdir(os.path.join(BASE_DIR, "insumos"))
         from main import main
         try:
             main()
