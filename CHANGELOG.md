@@ -2,8 +2,42 @@
 
 # Inventory Manager — Inventory Manager
 
-> **Current version: v1.3.0 — Bug Fix, Refactor & Modern UI**
-> Verified: Both apps start without import errors. All 3 phases complete.
+> **Current version: v1.4.0 — Core Module, Spanish UI & Installer**
+
+## 2026-07-21 — Core Module Extraction & Spanish UI (refactor/phase-1)
+
+### Added
+- **`core/`** — Shared Python module extracted from duplicate code across both apps:
+  - `core/__init__.py` — Package init
+  - `core/auth/utils.py` — Shared `hash_password()`, `get_windows_username()`
+  - `core/excel/utils.py` — Shared `is_file_locked()`, `safe_copy_for_reading()`, `backup_file()`, `get_header_map()`, `row_to_dict()`, `migrate_headers()`
+  - `core/config/path_config.py` — OneDrive path resolution (moved from root `path_config.py`)
+  - `core/ui/translations.py` — ~100 Spanish UI string keys used by both Qt and Tkinter apps
+  - `core/ui/base_styles.py` — Shared QSS stylesheet, font helpers (`FONT_TITLE`, `FONT_HEADER`, etc.), `apply_base_style()`
+- **`installer.iss`** — Inno Setup installer script; builds `InventoryManager-1.0.0-Setup.exe` (45MB)
+- **`release/InventoryManager-1.0.0-Setup.exe`** — First distributable installer
+
+### Changed
+- **`launcher.py`** — Added `BASE_DIR` to `sys.path` so `from core.xxx` imports work in PyInstaller bundle; `core/` directory bundled via `datas`
+- **`launcher.spec`** — Added `('core', 'core')` to datas, `PyQt5.QtSvg` to hiddenimports
+- **`path_config.py`** — Now a thin wrapper delegating to `core.config.path_config`
+- **Equipos Excel headers** — Migrated from English to Spanish (`FIRST NAME` → `Nombre`, etc.) with auto-migration on file load
+- **Equipos user storage** — Unified from dict to array format with auto-migration (`_migrate_dict_to_list()`)
+- **Equipos Qt UI (5 files)** — All hardcoded English strings replaced with imports from `core/ui/translations.py`:
+  - `main_window.py`, `login_dialog.py`, `item_form.py`, `inventory_view.py`, `user_management.py`
+- **Equipos Tkinter UI (2 files)** — All hardcoded English strings replaced with imports from `core/ui/translations.py`:
+  - `inventory_app.py`, `auth_manager.py`
+- **`equipos/config.py`** — Added `COLUMNS = list(BASE_COLUMNS)` initialization at module level
+
+### Fixed
+- **PyInstaller frozen exe imports** (`launcher.py`): `BASE_DIR` (not `_internal/core/`) must be on `sys.path` for `from core.xxx` package imports to resolve
+- **Missing `COLUMNS` in equipos/config.py**: Global variable was never initialized; `load_extra_columns()` assumed it existed
+- **Missing `PyQt5.QtSvg`** in PyInstaller bundle: Added to hiddenimports in `launcher.spec`
+
+### Removed
+- **`DEVLOG_2026-07-09.md`** — Redundant with CHANGELOG.md, no ongoing value
+- **`run.bat`** — Redundant launcher script
+- **`equipos/utils/`**, **`insumos/utils/`** — Replaced by `core/` module
 
 ## 2026-07-09 — Phase 3: Aesthetic Modernization
 
@@ -123,45 +157,45 @@ The error was not in any application `.py` file — it was in fpdf2's library co
 inventory_final/
   launcher.py           # Main entry point / launcher window
   launcher.spec         # PyInstaller spec
-  path_config.py        # Shared OneDrive path resolution
+  installer.iss         # Inno Setup installer script
+  path_config.py        # Thin wrapper → core.config.path_config
   onboarding.py         # First-run setup wizard
+  core/                 # Shared Python module
+    auth/utils.py       # hash_password(), get_windows_username()
+    excel/utils.py      # Excel helpers (lock, backup, migrate, etc.)
+    config/path_config.py  # OneDrive path resolution
+    ui/translations.py  # Spanish UI strings (~100 keys)
+    ui/base_styles.py   # Shared QSS stylesheet & font helpers
   Theme/
     theme.py            # Shared color constants & logo path
-    logo.jpg / app_icon.ico / installer_icon.ico
-  equipos/              # IT Equipment app (Tkinter)
-    inventory_app.py    # main() entry point
+    qss.py              # Shared build_stylesheet()
+    icons.py            # SVG icon generators
+    logo.jpg / app_icon.ico
+  equipos/              # IT Equipment app
+    inventory_app.py    # Tkinter entry point
+    inventory_app_qt/   # PyQt5 entry point
     config.py / excel_client.py / auth_manager.py
     users.json
-  Insumos/
-    config.json
-    inventory_app/      # Supplies app (PyQt5)
+  insumos/              # Supplies app (PyQt5)
+    inventory_app/
       main.py           # main() entry point
-      config/ / services/ / ui/ / utils/
-  scripts/
-    build.ps1           # PyInstaller + Inno Setup build pipeline
-    setup.iss           # Inno Setup installer script
+      config/ / services/ / ui/
 ```
 
-## How to Use (Source Distribution)
+## How to Build
 
 ```powershell
-# 1. Install dependencies
-pip install -r equipos/requirements.txt -r Insumos/inventory_app/requirements.txt
+# 1. Build exe
+python -m PyInstaller launcher.spec --clean --noconfirm
 
-# 2. Run
-python launcher.py
-# or double-click run.bat
-```
+# 2. Build installer
+& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss
 
-## How to Build Executable
-
-```powershell
-# Admin PowerShell
-.\scripts\build.ps1
+# Output: release\InventoryManager-1.0.0-Setup.exe
 ```
 
 ## Notes
 
-- This codebase is **stable and tested** as of 2026-06-24.
-- Source distribution (`.py` files + `run.bat`) avoids all Windows Defender false positives.
-- The `launcher.spec` is tuned with `--onedir`, expanded exclusions, and embedded version metadata for reduced heuristic scoring when building an `.exe`.
+- Both apps share a `core/` module for auth, Excel, config, UI translations, and styles.
+- Equipos has both Tkinter and PyQt5 versions; Insumos is PyQt5 only.
+- The `launcher.spec` uses `--onedir` mode with `console=False` for reduced Windows Defender false positives.
