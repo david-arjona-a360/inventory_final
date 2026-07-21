@@ -27,8 +27,7 @@ from PyQt5.QtGui import QFont
 from icons import icon_add, icon_edit, icon_delete, icon_users
 from services.auth_service import (
     load_users, save_users, hash_password,
-    users_to_list, users_from_list,
-    can_manage,
+    ROLES,
 )
 
 
@@ -141,7 +140,7 @@ class UserManagementView(QWidget):
 
     def refresh(self):
         try:
-            self._users = users_to_list(load_users())
+            self._users = load_users()
             self._populate_table()
             self._status_label.setText(f"{len(self._users)} user(s)")
         except Exception as e:
@@ -150,7 +149,7 @@ class UserManagementView(QWidget):
     def _populate_table(self):
         self._table.setRowCount(len(self._users))
         for row_idx, user in enumerate(self._users):
-            self._table.setItem(row_idx, 0, QTableWidgetItem(str(user.get("id", ""))))
+            self._table.setItem(row_idx, 0, QTableWidgetItem(str(row_idx + 1)))
             self._table.setItem(row_idx, 1, QTableWidgetItem(user.get("username", "")))
             self._table.setItem(row_idx, 2, QTableWidgetItem(user.get("role", "")))
             self._table.setItem(row_idx, 3, QTableWidgetItem(user.get("status", "active")))
@@ -162,8 +161,8 @@ class UserManagementView(QWidget):
         if not rows:
             return None
         row = rows.pop()
-        user_id = self._table.item(row, 0).text()
-        return next((u for u in self._users if str(u.get("id", "")) == user_id), None)
+        username = self._table.item(row, 1).text()
+        return next((u for u in self._users if u.get("username") == username), None)
 
     def _add_user(self):
         dialog = _UserFormDialog("Add User")
@@ -178,12 +177,10 @@ class UserManagementView(QWidget):
                 "status": "active",
             }
             prev = load_users()
-            prev[new_user["username"]] = {
-                "password": new_user["password"],
-                "role": new_user["role"],
-                "type": new_user["type"],
-                "status": new_user["status"],
-            }
+            if any(u.get("username", "").lower() == new_user["username"].lower() for u in prev):
+                QMessageBox.warning(self, "Exists", f"User '{new_user['username']}' already exists.")
+                return
+            prev.append(new_user)
             save_users(prev)
             self.refresh()
             self._status_label.setText(f"User '{new_user['username']}' added.")
@@ -196,9 +193,11 @@ class UserManagementView(QWidget):
         if dialog.exec_():
             new_pwd = dialog.get_password()
             prev = load_users()
-            if user["username"] in prev:
-                prev[user["username"]]["password"] = hash_password(new_pwd)
-                save_users(prev)
+            for u in prev:
+                if u.get("username") == user["username"]:
+                    u["password"] = hash_password(new_pwd)
+                    break
+            save_users(prev)
             self.refresh()
             self._status_label.setText(f"Password updated for '{user['username']}'.")
 
@@ -210,9 +209,11 @@ class UserManagementView(QWidget):
         if dialog.exec_():
             new_role = dialog.get_role()
             prev = load_users()
-            if user["username"] in prev:
-                prev[user["username"]]["role"] = new_role
-                save_users(prev)
+            for u in prev:
+                if u.get("username") == user["username"]:
+                    u["role"] = new_role
+                    break
+            save_users(prev)
             self.refresh()
             self._status_label.setText(f"Role changed to '{new_role}' for '{user['username']}'.")
 
@@ -230,7 +231,7 @@ class UserManagementView(QWidget):
         )
         if reply == QMessageBox.Yes:
             prev = load_users()
-            prev.pop(user["username"], None)
+            prev = [u for u in prev if u.get("username") != user["username"]]
             save_users(prev)
             self.refresh()
             self._status_label.setText(f"User '{user['username']}' removed.")

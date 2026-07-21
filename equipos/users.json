@@ -1,12 +1,16 @@
-{
-    "localadmin": {
+[
+    {
+        "username": "localadmin",
         "password": "07759b0ae661891ab035cb2cb807ea8e819a8c207927147fe74cd63b70b2cec9",
         "role": "admin",
-        "type": "local"
+        "type": "local",
+        "status": "active"
     },
-    "david.arjona": {
+    {
+        "username": "david.arjona",
         "password": "",
         "role": "admin",
-        "type": "windows"
+        "type": "windows",
+        "status": "active"
     }
-}
+]

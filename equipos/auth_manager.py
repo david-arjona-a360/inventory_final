@@ -59,34 +59,64 @@ ROLES = ("admin", "editor", "viewer")
 #  Internal helpers
 # ──────────────────────────────────────────────
 
-def _load_users() -> dict:
+def _migrate_dict_to_list(data):
+    if isinstance(data, list):
+        return data
+    if isinstance(data, dict):
+        result = []
+        for username, info in data.items():
+            result.append({
+                "username": username,
+                "password": info.get("password", ""),
+                "role": info.get("role", "viewer"),
+                "type": info.get("type", "local"),
+                "status": info.get("status", "active"),
+            })
+        return result
+    return []
+
+
+def _load_users() -> list:
     if not os.path.exists(USERS_FILE):
         _bootstrap_users()
     try:
         with open(USERS_FILE, "r") as f:
-            return json.load(f)
+            data = json.load(f)
     except (json.JSONDecodeError, FileNotFoundError):
         _bootstrap_users()
         with open(USERS_FILE, "r") as f:
-            return json.load(f)
+            data = json.load(f)
+    users = _migrate_dict_to_list(data)
+    if isinstance(data, dict):
+        _save_users(users)
+    return users
 
 
-def _save_users(users: dict):
+def _save_users(users: list):
     with open(USERS_FILE, "w") as f:
-        json.dump(users, f, indent=4)
+        json.dump(users, f, indent=2)
 
 
 def _bootstrap_users():
     """Create users.json with localadmin on first run."""
-    default = {
-        LOCAL_ADMIN_USERNAME: {
+    default = [
+        {
+            "username": LOCAL_ADMIN_USERNAME,
             "password": _hash(LOCAL_ADMIN_DEFAULT_PW),
-            "role":     "admin",
-            "type":     "local",
+            "role": "admin",
+            "type": "local",
+            "status": "active",
         }
-    }
+    ]
     _save_users(default)
 
+
+def _find_user(users, username):
+    username = username.lower()
+    for u in users:
+        if u.get("username", "").lower() == username:
+            return u
+    return None
 
 
 # ──────────────────────────────────────────────
@@ -98,19 +128,14 @@ def _show_first_run_instructions():
     flag_file = os.path.join(os.path.dirname(USERS_FILE), ".first_run_done")
     if not os.path.exists(flag_file):
         try:
-            # Try to read the instructions file we bundled
             instr_path = USERS_JSON_PATH.replace("users.json", "INSTRUCTIONS.txt")
             if os.path.exists(instr_path):
                 with open(instr_path, "r") as f:
                     content = f.read()
-                
-                # Create a simple scrollable instruction window
                 root = tk.Tk()
                 root.withdraw()
                 messagebox.showinfo("First Run Instructions", content)
                 root.destroy()
-                
-                # Mark as done so it doesn't show again
                 with open(flag_file, "w") as f:
                     f.write("done")
         except Exception:
@@ -122,16 +147,16 @@ def login(parent=None) -> dict | None:
     as a 'windows' type user → silent auto-login.
     Otherwise → show manual login dialog.
     """
-    # Show instructions to new users
     _show_first_run_instructions()
-    
+
     users       = _load_users()
     win_user    = _windows_username()
+    user        = _find_user(users, win_user)
 
-    if win_user and win_user in users and users[win_user]["type"] == "windows":
+    if user and user.get("type") == "windows":
         return {
-            "username": win_user,
-            "role":     users[win_user]["role"],
+            "username": user["username"],
+            "role":     user["role"],
             "type":     "windows",
         }
 
@@ -153,7 +178,7 @@ def _login_dialog(parent=None) -> dict | None:
 
     result = {"session": None}
 
-    tk.Label(dlg, text="🔐  Equipos",
+    tk.Label(dlg, text="Equipos",
              font=("Segoe UI", 13, "bold"), fg=TEXT_DARK).pack(pady=(24, 4))
     tk.Label(dlg, text="Please log in to continue",
              font=("Segoe UI", 9), fg=TEXT_MUTED).pack(pady=(0, 16))
@@ -178,11 +203,12 @@ def _login_dialog(parent=None) -> dict | None:
             messagebox.showwarning("Missing fields", "Please enter username and password.", parent=dlg)
             return
 
-        if uname in users and users[uname]["type"] == "local" \
-                and users[uname]["password"] == _hash(pwd):
+        user = _find_user(users, uname)
+        if user and user.get("type", "local") == "local" \
+                and user.get("password") == _hash(pwd):
             result["session"] = {
-                "username": uname,
-                "role":     users[uname]["role"],
+                "username": user["username"],
+                "role":     user["role"],
                 "type":     "local",
             }
             dlg.destroy()
@@ -232,7 +258,7 @@ def open_manage_users(session: dict, parent=None):
     y = (win.winfo_screenheight() - h) // 2
     win.geometry(f"{w}x{h}+{x}+{y}")
 
-    tk.Label(win, text="👥  User Management",
+    tk.Label(win, text="User Management",
              font=("Segoe UI", 12, "bold"), fg=TEXT_DARK).pack(pady=(16, 4))
 
     frame = tk.Frame(win, padx=16)
@@ -253,9 +279,10 @@ def open_manage_users(session: dict, parent=None):
 
     def _refresh():
         tree.delete(*tree.get_children())
-        for uname, info in _load_users().items():
+        for user in _load_users():
+            uname = user.get("username", "")
             tree.insert("", "end", iid=uname,
-                        values=(uname, info["role"], info["type"]))
+                        values=(uname, user.get("role", ""), user.get("type", "")))
 
     _refresh()
 
@@ -326,7 +353,7 @@ def open_manage_users(session: dict, parent=None):
                 messagebox.showwarning("Missing", "Username is required.", parent=add_win)
                 return
             users = _load_users()
-            if uname in users:
+            if _find_user(users, uname):
                 messagebox.showerror("Exists",
                                      f"User '{uname}' already exists.", parent=add_win)
                 return
@@ -334,11 +361,14 @@ def open_manage_users(session: dict, parent=None):
                 messagebox.showwarning("Missing", "Password required for local users.", parent=add_win)
                 return
 
-            users[uname] = {
+            new_user = {
+                "username": uname,
                 "password": _hash(pwd) if utype == "local" else "",
                 "role":     role,
                 "type":     utype,
+                "status":   "active",
             }
+            users.append(new_user)
             _save_users(users)
             _refresh()
             add_win.destroy()
@@ -365,7 +395,7 @@ def open_manage_users(session: dict, parent=None):
             return
         if messagebox.askyesno("Confirm", f"Remove user '{uname}'?", parent=win):
             users = _load_users()
-            users.pop(uname, None)
+            users = [u for u in users if u.get("username") != uname]
             _save_users(users)
             _refresh()
 
@@ -375,7 +405,8 @@ def open_manage_users(session: dict, parent=None):
             messagebox.showwarning("No selection", "Select a user to change password.", parent=win)
             return
         users = _load_users()
-        if users[uname]["type"] == "windows":
+        user = _find_user(users, uname)
+        if user and user.get("type") == "windows":
             messagebox.showinfo("Windows User",
                                 f"'{uname}' uses Windows domain authentication.\n"
                                 "Change their password in Active Directory / Microsoft 365.",
@@ -385,7 +416,10 @@ def open_manage_users(session: dict, parent=None):
                                          f"New password for '{uname}':",
                                          show="*", parent=win)
         if new_pwd:
-            users[uname]["password"] = _hash(new_pwd)
+            for u in users:
+                if u.get("username") == uname:
+                    u["password"] = _hash(new_pwd)
+                    break
             _save_users(users)
             messagebox.showinfo("Updated", "Password changed successfully.", parent=win)
 
@@ -409,12 +443,16 @@ def open_manage_users(session: dict, parent=None):
                  font=("Segoe UI", 10, "bold")).pack(pady=(20, 8))
 
         users    = _load_users()
-        role_var = tk.StringVar(value=users[uname]["role"])
+        user     = _find_user(users, uname)
+        role_var = tk.StringVar(value=user.get("role", "viewer") if user else "viewer")
         tk.OptionMenu(role_win, role_var, *ROLES).pack(pady=8)
 
         def _save_role():
             users = _load_users()
-            users[uname]["role"] = role_var.get()
+            for u in users:
+                if u.get("username") == uname:
+                    u["role"] = role_var.get()
+                    break
             _save_users(users)
             _refresh()
             role_win.destroy()
@@ -425,16 +463,16 @@ def open_manage_users(session: dict, parent=None):
         tk.Button(role_win, text="Cancel", width=14, fg=TEXT_MUTED,
                   command=role_win.destroy).pack()
 
-    tk.Button(btn_frame, text="➕  Add User",        width=16,
+    tk.Button(btn_frame, text="Add User",        width=16,
               fg=WHITE, bg=PRIMARY, activeforeground=WHITE, activebackground=DARK_RED,
               command=_add).grid(row=0, column=0, padx=6)
-    tk.Button(btn_frame, text="🗑  Remove User",     width=16,
+    tk.Button(btn_frame, text="Remove User",     width=16,
               fg=WHITE, bg=PRIMARY, activeforeground=WHITE, activebackground=DARK_RED,
               command=_remove).grid(row=0, column=1, padx=6)
-    tk.Button(btn_frame, text="🔑  Change Password", width=16,
+    tk.Button(btn_frame, text="Change Password", width=16,
               fg=WHITE, bg=PRIMARY, activeforeground=WHITE, activebackground=DARK_RED,
               command=_change_pwd).grid(row=0, column=2, padx=6)
-    tk.Button(btn_frame, text="🔒  Change Role",     width=16,
+    tk.Button(btn_frame, text="Change Role",     width=16,
               fg=WHITE, bg=PRIMARY, activeforeground=WHITE, activebackground=DARK_RED,
               command=_change_role).grid(row=1, column=0, padx=6, pady=6, columnspan=3)
 
