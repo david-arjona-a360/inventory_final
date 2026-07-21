@@ -13,6 +13,7 @@ from PIL import Image, ImageTk
 from config      import COLUMNS, find_file_path
 from excel_client import ExcelClient
 import auth_manager
+from core.ui.translations import *
 
 _theme_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "Theme"))
 if _theme_dir not in sys.path:
@@ -98,7 +99,7 @@ class InventoryApp(tk.Tk):
         self.client  = client
         self.session = session                  # ← NEW: holds current user info
 
-        self.title("Equipos - Inventory Manager")
+        self.title(APP_TITLE)
         self.minsize(900, 500)
         center_window(self, 1150, 640)          # slightly taller for the toolbar
 
@@ -126,7 +127,7 @@ class InventoryApp(tk.Tk):
             pass
 
         # ── Left side: title + logged-in user ─────────────────────────────────
-        tk.Label(bar, text="IT Inventory",
+        tk.Label(bar, text=ITEM_HEADER,
                  font=("Segoe UI", 13, "bold"), fg=TEXT_DARK).pack(side="left")
 
         role_color = ROLE_COLORS.get(self.session.get("role", "viewer"), TEXT_MUTED)
@@ -141,7 +142,7 @@ class InventoryApp(tk.Tk):
 
         # Logout  (always visible)
         tk.Button(
-            bar, text="⏻  Logout", width=12,
+            bar, text=f"⏻  {BTN_LOGOUT}", width=12,
             fg=WHITE, bg=PRIMARY,
             activeforeground=WHITE, activebackground=DARK_RED,
             command=self._do_logout,
@@ -150,7 +151,7 @@ class InventoryApp(tk.Tk):
         # Manage Users  (admin only — hidden for other roles)
         if auth_manager.can_manage(self.session):
             tk.Button(
-                bar, text="👥  Users", width=12,
+                bar, text=f"👥  {BTN_USERS}", width=12,
                 fg=WHITE, bg=PRIMARY,
                 activeforeground=WHITE, activebackground=DARK_RED,
                 command=self._do_manage_users,
@@ -160,31 +161,31 @@ class InventoryApp(tk.Tk):
         tk.Label(bar, text="|", fg=BORDER).pack(side="right", padx=2)
 
         # CRUD buttons  (gated by role)
-        tk.Button(bar, text="⟳  Refresh", width=12,
+        tk.Button(bar, text=f"⟳  {BTN_REFRESH}", width=12,
                   fg=WHITE, bg=PRIMARY,
                   activeforeground=WHITE, activebackground=DARK_RED,
                   command=self.load_items).pack(side="right", padx=4)
 
         if auth_manager.can_delete(self.session):
-            tk.Button(bar, text="🗑  Delete", width=12,
+            tk.Button(bar, text=f"🗑  {BTN_DELETE}", width=12,
                       fg=WHITE, bg=PRIMARY,
                       activeforeground=WHITE, activebackground=DARK_RED,
                       command=self.delete_item).pack(side="right", padx=4)
 
         if auth_manager.can_edit(self.session):
-            tk.Button(bar, text="✏  Edit", width=12,
+            tk.Button(bar, text=f"✏  {BTN_EDIT}", width=12,
                       fg=WHITE, bg=PRIMARY,
                       activeforeground=WHITE, activebackground=DARK_RED,
                       command=self.edit_item).pack(side="right", padx=4)
 
         if auth_manager.can_add(self.session):
-            tk.Button(bar, text="＋  Add", width=12,
+            tk.Button(bar, text=f"＋  {BTN_ADD}", width=12,
                       fg=WHITE, bg=PRIMARY,
                       activeforeground=WHITE, activebackground=DARK_RED,
                       command=self.add_item).pack(side="right", padx=4)
 
         # Search
-        tk.Label(bar, text="Search:", fg=TEXT_DARK).pack(side="left", padx=(24, 4))
+        tk.Label(bar, text=SEARCH_LABEL, fg=TEXT_DARK).pack(side="left", padx=(24, 4))
         self.search_var = tk.StringVar()
         self.search_var.trace_add("write", self._on_search)
         tk.Entry(bar, textvariable=self.search_var, width=30, fg=TEXT_DARK).pack(side="left")
@@ -235,14 +236,14 @@ class InventoryApp(tk.Tk):
         self.tree.bind("<Double-1>", lambda e: self.edit_item())
 
     def _build_statusbar(self):
-        self.status_var = tk.StringVar(value="Loading…")
+        self.status_var = tk.StringVar(value=ITEM_LOADING)
         tk.Label(self, textvariable=self.status_var, anchor="w",
                  font=("Segoe UI", 9), fg=TEXT_MUTED, padx=12).pack(fill="x", pady=(0, 6))
 
     # ── Auth actions ──────────────────────────────────────────────────────────
 
     def _do_logout(self):
-        if not messagebox.askyesno("Logout", "Are you sure you want to log out?"):
+        if not messagebox.askyesno(LOGOUT_TITLE, LOGOUT_CONFIRM):
             return
         auth_manager.logout(self.session)
         self.destroy()
@@ -262,12 +263,12 @@ class InventoryApp(tk.Tk):
         for item in items:
             values = [item.get(col, "") for col in COLUMNS]
             self.tree.insert("", "end", iid=str(item["_row"]), values=values)
-        self.status_var.set(f"{len(items)} record(s) loaded.  •  {self.client.file_path}")
+        self.status_var.set(f"{ITEM_LOADED.format(n=len(items))}  •  {self.client.file_path}")
 
     def _selected_item(self) -> dict | None:
         sel = self.tree.selection()
         if not sel:
-            messagebox.showinfo("No selection", "Please select a row first.")
+            messagebox.showinfo(MSG_NO_SELECTION, MSG_SELECT_ROW)
             return None
         row_num = int(sel[0])
         return next((i for i in self._items if i["_row"] == row_num), None)
@@ -294,27 +295,25 @@ class InventoryApp(tk.Tk):
     def _check_lock(self) -> bool:
         if self.client.is_locked():
             return messagebox.askyesno(
-                "File In Use",
-                "The inventory file appears to be open in Excel by another user.\n\n"
-                "Saving now may cause conflicts.\n\n"
-                "Do you want to proceed anyway?",
+                FILE_IN_USE,
+                FILE_IN_USE_MSG,
             )
         return True
 
     # ── CRUD actions ──────────────────────────────────────────────────────────
 
     def load_items(self):
-        self.status_var.set("Loading…")
+        self.status_var.set(ITEM_LOADING)
         try:
             self._items = self.client.get_all_items()
             self._populate_table(self._items)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not read file:\n{e}")
-            self.status_var.set("Error loading file.")
+            messagebox.showerror(MSG_ERROR, ITEM_READ_ERROR.format(e=e))
+            self.status_var.set(ITEM_LOAD_ERROR)
 
     def add_item(self):
         if not auth_manager.can_add(self.session):
-            messagebox.showerror("Access Denied", "Your role does not allow adding items.")
+            messagebox.showerror(ACCESS_DENIED, ACCESS_DENIED_ADD)
             return
         if not self._check_lock():
             return
@@ -327,19 +326,19 @@ class InventoryApp(tk.Tk):
                 values = [data.get(col, "") for col in COLUMNS]
                 self.tree.insert("", "end", iid=str(new_row), values=values)
                 self.status_var.set(
-                    f"{len(self._items)} record(s) loaded.  •  {self.client.file_path}")
-                self.status_var.set("Item added successfully.")
+                    f"{ITEM_LOADED.format(n=len(self._items))}  •  {self.client.file_path}")
+                self.status_var.set(ITEM_ADDED)
             except Exception as e:
-                messagebox.showerror("Error", f"Could not add item:\n{e}")
+                messagebox.showerror(MSG_ERROR, ITEM_ADD_ERROR.format(e=e))
 
-        ItemForm(self, "Add New Item", None, _save)
+        ItemForm(self, ITEM_ADD_TITLE, None, _save)
 
     def edit_item(self):
         item = self._selected_item()
         if not item:
             return
         if not auth_manager.can_edit(self.session):
-            messagebox.showerror("Access Denied", "Your role does not allow editing items.")
+            messagebox.showerror(ACCESS_DENIED, ACCESS_DENIED_EDIT)
             return
         if not self._check_lock():
             return
@@ -353,11 +352,11 @@ class InventoryApp(tk.Tk):
                         break
                 values = [data.get(col, "") for col in COLUMNS]
                 self.tree.item(str(item["_row"]), values=values)
-                self.status_var.set("Item updated successfully.")
+                self.status_var.set(ITEM_UPDATED)
             except Exception as e:
-                messagebox.showerror("Error", f"Could not update item:\n{e}")
+                messagebox.showerror(MSG_ERROR, ITEM_UPDATE_ERROR.format(e=e))
 
-        ItemForm(self, "Edit Item", item, _save)
+        ItemForm(self, ITEM_EDIT_TITLE, item, _save)
 
     def delete_item(self):
         item = self._selected_item()
@@ -365,8 +364,8 @@ class InventoryApp(tk.Tk):
             return
 
         if not auth_manager.can_delete(self.session):
-            messagebox.showerror("Access Denied",
-                                 "Only admins can delete records.")
+            messagebox.showerror(ACCESS_DENIED,
+                                 ACCESS_DENIED_DELETE)
             return
 
         if not self._check_lock():
@@ -376,8 +375,8 @@ class InventoryApp(tk.Tk):
             f"{item.get('Nombre', '')} {item.get('Apellido', '')}".strip()
             or f"row {item['_row']}"
         )
-        if not messagebox.askyesno("Confirm Delete",
-                                   f"Permanently delete record for '{name}'?"):
+        if not messagebox.askyesno(MSG_CONFIRM,
+                                   ITEM_DELETE_CONFIRM.format(name=name)):
             return
 
         try:
@@ -389,9 +388,9 @@ class InventoryApp(tk.Tk):
                 if i["_row"] > deleted_row:
                     i["_row"] -= 1
             self._populate_table(self._items)
-            self.status_var.set("Item deleted.")
+            self.status_var.set(ITEM_DELETED)
         except Exception as e:
-            messagebox.showerror("Error", f"Could not delete item:\n{e}")
+            messagebox.showerror(MSG_ERROR, ITEM_DELETE_ERROR.format(e=e))
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
@@ -417,14 +416,8 @@ def main():
         root = tk.Tk()
         root.withdraw()
         messagebox.showerror(
-            "File Not Found",
-            "The inventory file could not be found.\n\n"
-            "Please make sure:\n"
-            "  1. OneDrive is running and synced\n"
-            "  2. You have added the SharePoint folder shortcut to OneDrive\n"
-            "  3. The file exists at:\n\n"
-            "     OneDrive - a360inc \\ PTY Files - EQUIPOS \\\n"
-            "     Formato_Inventario_TI.xlsx"
+            FILE_NOT_FOUND,
+            FILE_NOT_FOUND_MSG
         )
         root.destroy()
         return

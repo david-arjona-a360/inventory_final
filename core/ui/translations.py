@@ -104,3 +104,49 @@ PWD_EMPTY = "La contrasena no puede estar vacia."
 
 ROLE_TITLE = "Cambiar Rol para '{username}'"
 ROLE_NEW_LABEL = "Nuevo Rol:"
+
+# ── Tkinter-specific keys ────────────────────────────────────────────────────
+
+SEARCH_LABEL = "Buscar:"
+
+ACCESS_DENIED = "Acceso Denegado"
+ACCESS_DENIED_ADD = "Su rol no permite agregar equipos."
+ACCESS_DENIED_EDIT = "Su rol no permite editar equipos."
+ACCESS_DENIED_DELETE = "Solo los administradores pueden eliminar registros."
+ACCESS_DENIED_MANAGE = "Solo los administradores pueden gestionar usuarios."
+
+FILE_NOT_FOUND = "Archivo No Encontrado"
+FILE_NOT_FOUND_MSG = (
+    "El archivo de inventario no pudo ser encontrado.\n\n"
+    "Asegurese de que:\n"
+    "  1. OneDrive esta ejecutandose y sincronizado\n"
+    "  2. Ha agregado la carpeta de SharePoint a OneDrive\n"
+    "  3. El archivo existe en:\n\n"
+    "     OneDrive - a360inc \\ PTY Files - EQUIPOS \\\n"
+    "     Formato_Inventario_TI.xlsx"
+)
+
+FIRST_RUN_TITLE = "Instrucciones de Primera Ejecucion"
+
+USER_ADD_TITLE = "Agregar Nuevo Usuario"
+USER_SELECT_REMOVE = "Seleccione un usuario para eliminar."
+USER_SELECT_PWD = "Seleccione un usuario para cambiar contrasena."
+USER_SELECT_ROLE = "Seleccione un usuario para cambiar rol."
+USER_LOCALADMIN_PROTECTED = "La cuenta localadmin no puede ser eliminada."
+USER_ROLE_PROTECTED = "El rol de localadmin no puede ser cambiado."
+USER_WINDOWS_AUTH_NOTE = (
+    "'{username}' usa autenticacion de dominio Windows.\n"
+    "Cambie su contrasena en Active Directory / Microsoft 365."
+)
+
+MISSING_FIELDS = "Campos faltantes"
+MISSING_FIELDS_MSG = "Ingrese usuario y contrasena."
+
+USER_TABLE_TYPE = "Tipo"
+
+BTN_LOGOUT = "Cerrar Sesion"
+BTN_USERS = "Usuarios"
+BTN_REFRESH = "Actualizar"
+BTN_DELETE = "Eliminar"
+BTN_EDIT = "Editar"
+BTN_ADD = "Agregar"

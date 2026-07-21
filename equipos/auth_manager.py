@@ -14,6 +14,7 @@ from tkinter import messagebox, simpledialog, ttk
 
 from core.auth.utils import hash_password as _hash
 from core.auth.utils import get_windows_username as _windows_username
+from core.ui.translations import *
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 log = logging.getLogger("auth_manager")
@@ -134,7 +135,7 @@ def _show_first_run_instructions():
                     content = f.read()
                 root = tk.Tk()
                 root.withdraw()
-                messagebox.showinfo("First Run Instructions", content)
+                messagebox.showinfo(FIRST_RUN_TITLE, content)
                 root.destroy()
                 with open(flag_file, "w") as f:
                     f.write("done")
@@ -166,7 +167,7 @@ def login(parent=None) -> dict | None:
 def _login_dialog(parent=None) -> dict | None:
     """Modal login window — returns session dict or None."""
     dlg = tk.Toplevel(parent) if parent else tk.Tk()
-    dlg.title("Equipos — Login")
+    dlg.title(APP_TITLE_LOGIN)
     dlg.resizable(False, False)
     dlg.grab_set()
 
@@ -178,19 +179,19 @@ def _login_dialog(parent=None) -> dict | None:
 
     result = {"session": None}
 
-    tk.Label(dlg, text="Equipos",
+    tk.Label(dlg, text=APP_TITLE,
              font=("Segoe UI", 13, "bold"), fg=TEXT_DARK).pack(pady=(24, 4))
-    tk.Label(dlg, text="Please log in to continue",
+    tk.Label(dlg, text=LOGIN_SUBTITLE,
              font=("Segoe UI", 9), fg=TEXT_MUTED).pack(pady=(0, 16))
 
     form = tk.Frame(dlg, padx=32)
     form.pack(fill="x")
 
-    tk.Label(form, text="Username:", anchor="w").grid(row=0, column=0, sticky="w", pady=4)
+    tk.Label(form, text=FORM_USERNAME_LABEL, anchor="w").grid(row=0, column=0, sticky="w", pady=4)
     uname_var = tk.StringVar()
     tk.Entry(form, textvariable=uname_var, width=24).grid(row=0, column=1, sticky="w", pady=4)
 
-    tk.Label(form, text="Password:", anchor="w").grid(row=1, column=0, sticky="w", pady=4)
+    tk.Label(form, text=FORM_PASSWORD_LABEL, anchor="w").grid(row=1, column=0, sticky="w", pady=4)
     pwd_var = tk.StringVar()
     tk.Entry(form, textvariable=pwd_var, show="*", width=24).grid(row=1, column=1, sticky="w", pady=4)
 
@@ -200,7 +201,7 @@ def _login_dialog(parent=None) -> dict | None:
         pwd   = pwd_var.get()
 
         if not uname or not pwd:
-            messagebox.showwarning("Missing fields", "Please enter username and password.", parent=dlg)
+            messagebox.showwarning(MISSING_FIELDS, MISSING_FIELDS_MSG, parent=dlg)
             return
 
         user = _find_user(users, uname)
@@ -213,15 +214,15 @@ def _login_dialog(parent=None) -> dict | None:
             }
             dlg.destroy()
         else:
-            messagebox.showerror("Login Failed", "Incorrect username or password.", parent=dlg)
+            messagebox.showerror(MSG_ERROR, LOGIN_FAILED, parent=dlg)
 
     def _cancel():
         dlg.destroy()
 
-    tk.Button(dlg, text="Login", width=16, bg=PRIMARY, fg=WHITE,
+    tk.Button(dlg, text=LOGIN_BTN, width=16, bg=PRIMARY, fg=WHITE,
               activebackground=DARK_RED, activeforeground=WHITE,
               command=_attempt).pack(pady=(20, 4))
-    tk.Button(dlg, text="Cancel", width=16, command=_cancel,
+    tk.Button(dlg, text=LOGIN_CANCEL, width=16, command=_cancel,
               fg=TEXT_MUTED).pack()
 
     dlg.bind("<Return>", lambda e: _attempt())
@@ -243,12 +244,12 @@ def logout(session: dict, restart_callback=None):
 def open_manage_users(session: dict, parent=None):
     """Full user-management window. Only admins may open it."""
     if session.get("role") != "admin":
-        messagebox.showerror("Access Denied",
-                             "Only administrators can manage users.", parent=parent)
+        messagebox.showerror(ACCESS_DENIED,
+                             ACCESS_DENIED_MANAGE, parent=parent)
         return
 
     win = tk.Toplevel(parent)
-    win.title("Manage Users")
+    win.title(USER_HEADER)
     win.resizable(False, False)
     win.grab_set()
 
@@ -258,13 +259,13 @@ def open_manage_users(session: dict, parent=None):
     y = (win.winfo_screenheight() - h) // 2
     win.geometry(f"{w}x{h}+{x}+{y}")
 
-    tk.Label(win, text="User Management",
+    tk.Label(win, text=USER_HEADER,
              font=("Segoe UI", 12, "bold"), fg=TEXT_DARK).pack(pady=(16, 4))
 
     frame = tk.Frame(win, padx=16)
     frame.pack(fill="both", expand=True)
 
-    cols = ("Username", "Role", "Type")
+    cols = (USER_TABLE_USERNAME, USER_TABLE_ROLE, USER_TABLE_TYPE)
     tree = ttk.Treeview(frame, columns=cols, show="headings",
                             height=10, selectmode="browse")
     for col in cols:
@@ -295,12 +296,12 @@ def open_manage_users(session: dict, parent=None):
 
     def _add():
         add_win = tk.Toplevel(win)
-        add_win.title("Add User")
+        add_win.title(USER_ADD)
         add_win.resizable(False, False)
         add_win.grab_set()
         add_win.geometry("360x320")
 
-        tk.Label(add_win, text="Add New User",
+        tk.Label(add_win, text=USER_ADD_TITLE,
                  font=("Segoe UI", 11, "bold")).pack(pady=(16, 8))
 
         f = tk.Frame(add_win, padx=28)
@@ -316,18 +317,18 @@ def open_manage_users(session: dict, parent=None):
             e.grid(row=row, column=1, sticky="w", pady=5)
             fields[key] = var
 
-        _row("Username:",  "uname", row=0)
+        _row(FORM_USERNAME_LABEL,  "uname", row=0)
 
-        tk.Label(f, text="Type:", anchor="w").grid(row=1, column=0, sticky="w", pady=5)
+        tk.Label(f, text=FORM_TYPE_LABEL, anchor="w").grid(row=1, column=0, sticky="w", pady=5)
         type_var = tk.StringVar(value="windows")
         rb_frame = tk.Frame(f)
         rb_frame.grid(row=1, column=1, sticky="w")
-        tk.Radiobutton(rb_frame, text="Windows SSO", variable=type_var,
+        tk.Radiobutton(rb_frame, text=FORM_TYPE_WINDOWS, variable=type_var,
                        value="windows").pack(side="left")
-        tk.Radiobutton(rb_frame, text="Local",       variable=type_var,
+        tk.Radiobutton(rb_frame, text=FORM_TYPE_LOCAL,       variable=type_var,
                        value="local").pack(side="left")
 
-        pwd_label = tk.Label(f, text="Password:", anchor="w")
+        pwd_label = tk.Label(f, text=FORM_PASSWORD_LABEL, anchor="w")
         pwd_label.grid(row=2, column=0, sticky="w", pady=5)
         pwd_var_field = tk.StringVar()
         pwd_entry = tk.Entry(f, textvariable=pwd_var_field, show="*", width=22)
@@ -339,7 +340,7 @@ def open_manage_users(session: dict, parent=None):
         type_var.trace_add("write", _toggle_pwd)
         _toggle_pwd()
 
-        tk.Label(f, text="Role:", anchor="w").grid(row=3, column=0, sticky="w", pady=5)
+        tk.Label(f, text=FORM_ROLE_LABEL, anchor="w").grid(row=3, column=0, sticky="w", pady=5)
         role_var = tk.StringVar(value="viewer")
         tk.OptionMenu(f, role_var, *ROLES).grid(row=3, column=1, sticky="w")
 
@@ -350,15 +351,15 @@ def open_manage_users(session: dict, parent=None):
             pwd   = pwd_var_field.get()
 
             if not uname:
-                messagebox.showwarning("Missing", "Username is required.", parent=add_win)
+                messagebox.showwarning(MSG_VALIDATION, FORM_USERNAME_EMPTY, parent=add_win)
                 return
             users = _load_users()
             if _find_user(users, uname):
-                messagebox.showerror("Exists",
-                                     f"User '{uname}' already exists.", parent=add_win)
+                messagebox.showerror(MSG_EXISTS,
+                                     USER_EXISTS.format(username=uname), parent=add_win)
                 return
             if utype == "local" and not pwd:
-                messagebox.showwarning("Missing", "Password required for local users.", parent=add_win)
+                messagebox.showwarning(MSG_VALIDATION, FORM_PWD_REQUIRED, parent=add_win)
                 return
 
             new_user = {
@@ -372,28 +373,28 @@ def open_manage_users(session: dict, parent=None):
             _save_users(users)
             _refresh()
             add_win.destroy()
-            messagebox.showinfo("Added", f"User '{uname}' added successfully.", parent=win)
+            messagebox.showinfo(MSG_ADDED, USER_ADDED.format(username=uname), parent=win)
 
-        tk.Button(add_win, text="Add User", width=16, bg=PRIMARY, fg=WHITE,
+        tk.Button(add_win, text=USER_ADD, width=16, bg=PRIMARY, fg=WHITE,
                   activebackground=DARK_RED, activeforeground=WHITE,
                   command=_save_new).pack(pady=(16, 4))
-        tk.Button(add_win, text="Cancel",   width=16, fg=TEXT_MUTED,
+        tk.Button(add_win, text=FORM_CANCEL,   width=16, fg=TEXT_MUTED,
                   command=add_win.destroy).pack()
 
     def _remove():
         uname = _selected_username()
         if not uname:
-            messagebox.showwarning("No selection", "Select a user to remove.", parent=win)
+            messagebox.showwarning(MSG_NO_SELECTION, USER_SELECT_REMOVE, parent=win)
             return
         if uname == LOCAL_ADMIN_USERNAME:
-            messagebox.showerror("Protected",
-                                 "The localadmin account cannot be removed.", parent=win)
+            messagebox.showerror(MSG_PROTECTED,
+                                 USER_LOCALADMIN_PROTECTED, parent=win)
             return
         if uname == session.get("username"):
-            messagebox.showerror("Error",
-                                 "You cannot remove your own account.", parent=win)
+            messagebox.showerror(MSG_ERROR,
+                                 USER_CANNOT_REMOVE, parent=win)
             return
-        if messagebox.askyesno("Confirm", f"Remove user '{uname}'?", parent=win):
+        if messagebox.askyesno(MSG_CONFIRM, USER_CONFIRM_REMOVE.format(username=uname), parent=win):
             users = _load_users()
             users = [u for u in users if u.get("username") != uname]
             _save_users(users)
@@ -402,18 +403,17 @@ def open_manage_users(session: dict, parent=None):
     def _change_pwd():
         uname = _selected_username()
         if not uname:
-            messagebox.showwarning("No selection", "Select a user to change password.", parent=win)
+            messagebox.showwarning(MSG_NO_SELECTION, USER_SELECT_PWD, parent=win)
             return
         users = _load_users()
         user = _find_user(users, uname)
         if user and user.get("type") == "windows":
-            messagebox.showinfo("Windows User",
-                                f"'{uname}' uses Windows domain authentication.\n"
-                                "Change their password in Active Directory / Microsoft 365.",
+            messagebox.showinfo(FORM_TYPE_WINDOWS,
+                                USER_WINDOWS_AUTH_NOTE.format(username=uname),
                                 parent=win)
             return
-        new_pwd = simpledialog.askstring("Change Password",
-                                         f"New password for '{uname}':",
+        new_pwd = simpledialog.askstring(USER_CHANGE_PWD,
+                                         PWD_TITLE.format(username=uname),
                                          show="*", parent=win)
         if new_pwd:
             for u in users:
@@ -421,25 +421,25 @@ def open_manage_users(session: dict, parent=None):
                     u["password"] = _hash(new_pwd)
                     break
             _save_users(users)
-            messagebox.showinfo("Updated", "Password changed successfully.", parent=win)
+            messagebox.showinfo(MSG_UPDATED, USER_PWD_UPDATED.format(username=uname), parent=win)
 
     def _change_role():
         uname = _selected_username()
         if not uname:
-            messagebox.showwarning("No selection", "Select a user to change role.", parent=win)
+            messagebox.showwarning(MSG_NO_SELECTION, USER_SELECT_ROLE, parent=win)
             return
         if uname == LOCAL_ADMIN_USERNAME:
-            messagebox.showerror("Protected",
-                                 "The localadmin role cannot be changed.", parent=win)
+            messagebox.showerror(MSG_PROTECTED,
+                                 USER_ROLE_PROTECTED, parent=win)
             return
 
         role_win = tk.Toplevel(win)
-        role_win.title("Change Role")
+        role_win.title(USER_CHANGE_ROLE)
         role_win.resizable(False, False)
         role_win.grab_set()
         role_win.geometry("280x180")
 
-        tk.Label(role_win, text=f"Change role for '{uname}'",
+        tk.Label(role_win, text=ROLE_TITLE.format(username=uname),
                  font=("Segoe UI", 10, "bold")).pack(pady=(20, 8))
 
         users    = _load_users()
@@ -457,22 +457,22 @@ def open_manage_users(session: dict, parent=None):
             _refresh()
             role_win.destroy()
 
-        tk.Button(role_win, text="Save", width=14, bg=PRIMARY, fg=WHITE,
+        tk.Button(role_win, text=FORM_SAVE, width=14, bg=PRIMARY, fg=WHITE,
                   activebackground=DARK_RED, activeforeground=WHITE,
                   command=_save_role).pack(pady=6)
-        tk.Button(role_win, text="Cancel", width=14, fg=TEXT_MUTED,
+        tk.Button(role_win, text=FORM_CANCEL, width=14, fg=TEXT_MUTED,
                   command=role_win.destroy).pack()
 
-    tk.Button(btn_frame, text="Add User",        width=16,
+    tk.Button(btn_frame, text=USER_ADD,        width=16,
               fg=WHITE, bg=PRIMARY, activeforeground=WHITE, activebackground=DARK_RED,
               command=_add).grid(row=0, column=0, padx=6)
-    tk.Button(btn_frame, text="Remove User",     width=16,
+    tk.Button(btn_frame, text=USER_REMOVE,     width=16,
               fg=WHITE, bg=PRIMARY, activeforeground=WHITE, activebackground=DARK_RED,
               command=_remove).grid(row=0, column=1, padx=6)
-    tk.Button(btn_frame, text="Change Password", width=16,
+    tk.Button(btn_frame, text=USER_CHANGE_PWD, width=16,
               fg=WHITE, bg=PRIMARY, activeforeground=WHITE, activebackground=DARK_RED,
               command=_change_pwd).grid(row=0, column=2, padx=6)
-    tk.Button(btn_frame, text="Change Role",     width=16,
+    tk.Button(btn_frame, text=USER_CHANGE_ROLE,     width=16,
               fg=WHITE, bg=PRIMARY, activeforeground=WHITE, activebackground=DARK_RED,
               command=_change_role).grid(row=1, column=0, padx=6, pady=6, columnspan=3)
 
