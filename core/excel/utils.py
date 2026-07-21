@@ -18,3 +18,33 @@ def safe_copy_for_reading(filepath):
     tmp = tempfile.NamedTemporaryFile(delete=False, suffix=".xlsx")
     shutil.copy2(filepath, tmp.name)
     return tmp.name
+
+
+def backup_file(filepath):
+    backup_path = filepath + ".bak"
+    try:
+        shutil.copy2(filepath, backup_path)
+    except OSError:
+        pass
+
+
+def get_header_map(sheet):
+    return {
+        cell.value.strip().upper(): cell.column
+        for cell in sheet[1]
+        if cell.value
+    }
+
+
+def row_to_dict(sheet, row_num, columns, header_map, check_empty=False):
+    item = {"_row": row_num}
+    all_empty = True
+    for col_name in columns:
+        col_idx = header_map.get(col_name.upper())
+        val = sheet.cell(row=row_num, column=col_idx).value or "" if col_idx else ""
+        item[col_name] = val
+        if check_empty and str(val).strip():
+            all_empty = False
+    if check_empty and all_empty:
+        return None
+    return item
